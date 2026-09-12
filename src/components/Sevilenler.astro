@@ -1,0 +1,202 @@
+---
+import { Picture } from 'astro:assets';
+import { menu, findItem, portionPrice, type MenuItem } from '../data/menu';
+import { foodImage } from '../lib/images';
+import { formatPrice } from '../data/site';
+
+// Google'da "popüler" işaretli ve Migros Yemek'te en çok sipariş edilenler (docs/marka-arastirmasi.md),
+// artı işletmenin imza tavası.
+const ids = ['ciger-sis', 'adana-urfa-durum', 'karisik-izgara', 'miqqo-tava', 'ciger-sis-durum', 'tavuk-sis'];
+const items = ids
+  .map((id) => findItem(id))
+  .filter((item): item is MenuItem & { image: string } => !!item?.image);
+const total = menu.reduce((sum, c) => sum + c.items.length, 0);
+---
+
+<section class="sevilen" id="sevilenler" aria-labelledby="sevilen-baslik" data-pan>
+  <div class="sevilen__viewport" data-pan-viewport>
+    <div class="sevilen__track" data-pan-track>
+      <header class="sevilen__head">
+        <h2 id="sevilen-baslik" class="display sevilen__title">En çok sevilenler</h2>
+        <p class="sevilen__sub">Google'da ve paket siparişlerde en çok tercih edilen tabaklar.</p>
+      </header>
+
+      {
+        items.map((item) => (
+          <article class="dish" data-pan-card>
+            <div class="dish__stage stage">
+              <Picture
+                class:list={['cutout', item.framed && 'cutout--framed']}
+                src={foodImage(item.image)}
+                alt={item.name}
+                widths={[320, 480, 640]}
+                sizes="(min-width: 1024px) 26vw, 70vw"
+                formats={['webp']}
+                loading="lazy"
+              />
+            </div>
+            <div class="dish__meta">
+              <h3 class="display dish__name">{item.name}</h3>
+              <p class="display dish__price">{formatPrice(portionPrice(item)!)}</p>
+            </div>
+            <p class="dish__desc">{item.ingredients}</p>
+          </article>
+        ))
+      }
+
+      <a href="/menu" class="sevilen__all">
+        <span class="display">{total} ürünün hepsi menüde</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<script>
+  import { gsap, allowMotionQuery } from '../scripts/motion';
+
+  const section = document.querySelector<HTMLElement>('[data-pan]');
+  const track = section?.querySelector<HTMLElement>('[data-pan-track]');
+
+  if (section && track) {
+    gsap.matchMedia().add(`(min-width: 1024px) and ${allowMotionQuery}`, () => {
+      section.classList.add('is-pinned');
+      const distance = () => Math.max(track.scrollWidth - window.innerWidth, 0);
+
+      gsap.to(track, {
+        x: () => -distance(),
+        ease: 'none',
+        scrollTrigger: {
+          trigger: section,
+          start: 'top top',
+          end: () => `+=${distance()}`,
+          pin: true,
+          scrub: 1,
+          invalidateOnRefresh: true,
+        },
+      });
+
+      return () => section.classList.remove('is-pinned');
+    });
+  }
+</script>
+
+<style>
+  .sevilen {
+    padding-block: clamp(40px, 8vw, 120px);
+  }
+
+  .sevilen__viewport {
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+  }
+
+  .sevilen__viewport::-webkit-scrollbar {
+    display: none;
+  }
+
+  .sevilen__track {
+    display: flex;
+    align-items: stretch;
+    gap: clamp(16px, 2.4vw, 36px);
+    width: max-content;
+    padding-inline: var(--gutter);
+  }
+
+  /* Şerit içinde hücre en uzun kartın boyuna esniyor. Mobilde başlık üste hizalanır,
+     yoksa üstünde 250 px boşluk kalıyor; pinlenmiş masaüstünde ortalanıyor. */
+  .sevilen__head {
+    display: grid;
+    align-content: start;
+    gap: 1rem;
+    width: min(82vw, 30rem);
+    padding-right: 1rem;
+    scroll-snap-align: start;
+  }
+
+  .sevilen__title {
+    font-size: clamp(3.25rem, 8vw, 7.5rem);
+  }
+
+  .sevilen__sub {
+    max-width: 30ch;
+    color: var(--color-kul);
+  }
+
+  .dish {
+    display: grid;
+    align-content: start;
+    gap: 0.6rem;
+    width: min(74vw, 25rem);
+    scroll-snap-align: start;
+  }
+
+  .dish__stage {
+    aspect-ratio: 4 / 3;
+  }
+
+  /* Fiyat adın altında: sağ kenarda durduğunda yandaki kartın adına yapışmış görünüyordu. */
+  .dish__meta {
+    display: grid;
+    gap: 0.15rem;
+    margin-top: 0.4rem;
+  }
+
+  .dish__name {
+    font-size: clamp(1.9rem, 2.6vw, 2.6rem);
+    line-height: 1;
+  }
+
+  .dish__price {
+    color: var(--color-koz);
+    font-size: clamp(1.5rem, 2vw, 2rem);
+    line-height: 1;
+  }
+
+  .dish__desc {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    color: var(--color-kul);
+    font-size: 0.95rem;
+  }
+
+  .sevilen__all {
+    display: grid;
+    align-content: center;
+    width: min(70vw, 22rem);
+    font-size: clamp(2.4rem, 4vw, 3.4rem);
+    line-height: 1;
+    color: var(--color-koz);
+    scroll-snap-align: start;
+  }
+
+  .sevilen__all:hover span {
+    color: var(--color-koz-acik);
+  }
+
+  .sevilen.is-pinned {
+    padding-block: 0;
+  }
+
+  .sevilen.is-pinned .sevilen__viewport {
+    overflow: hidden;
+    scroll-snap-type: none;
+  }
+
+  .sevilen.is-pinned .sevilen__track {
+    align-items: center;
+    height: 100svh;
+    padding-top: var(--header-h);
+  }
+
+  .sevilen.is-pinned .dish {
+    width: clamp(19rem, 26vw, 26rem);
+  }
+
+  .sevilen.is-pinned .sevilen__head {
+    align-content: center;
+  }
+</style>

@@ -1,0 +1,304 @@
+---
+import { Picture } from 'astro:assets';
+import Icon from './Icon.astro';
+import StatusBadge from './StatusBadge.astro';
+import { foodImage } from '../lib/images';
+import { site } from '../data/site';
+import { groupedHours } from '../lib/hours';
+
+const hours = groupedHours();
+const checked = new Intl.DateTimeFormat('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' }).format(
+  new Date(site.rating.checkedAt)
+);
+const ratingText = site.rating.value.toLocaleString('tr-TR', { minimumFractionDigits: 1 });
+const reviewCount = site.rating.count.toLocaleString('tr-TR');
+const fillPercent = (site.rating.value / 5) * 100;
+
+// Google Haritalar'daki gerçek yorumlardan kısa alıntılar. İsim yazılmaz.
+const quotes = [
+  'Uygun fiyatlı ve inanılmaz lezzetli. Çalışanlar çok kibar ve ilgili.',
+  'Küçük, sevimli bir yer; ciğerleri, mezeleri, salatası inanılmaz lezzetli.',
+];
+---
+
+<section class="misafir" id="misafirlerimiz" aria-labelledby="misafir-baslik">
+  <div class="container-site">
+    <h2 id="misafir-baslik" class="display misafir__title">Misafirlerimiz</h2>
+
+    <div class="bento">
+      <div class="bento__rating" data-reveal>
+        <p class="bento__score display">{ratingText}</p>
+        <div class="bento__stars" aria-hidden="true">
+          <div class="bento__stars-base">
+            {[0, 1, 2, 3, 4].map(() => <Icon name="star-fill" size={26} />)}
+          </div>
+          <div class="bento__stars-fill" data-stars style={`--fill: ${fillPercent}%`}>
+            {[0, 1, 2, 3, 4].map(() => <Icon name="star-fill" size={26} />)}
+          </div>
+        </div>
+        <p class="bento__count">
+          Google'da {reviewCount} yorum
+          <span class="bento__checked">{checked} itibarıyla</span>
+        </p>
+        <a class="bento__review" href={site.links.googleReview} rel="noopener" target="_blank">
+          <Icon name="google-logo-bold" size={18} />
+          <span class="link-underline">Google'da yorum yaz</span>
+        </a>
+      </div>
+
+      <figure class="bento__photo" data-reveal>
+        <Picture
+          src={foodImage('special-sis')}
+          alt="Mangal tepsisinde et ve ciğer şiş, yanında mezeler, salata ve lavaş"
+          widths={[400, 620, 940]}
+          sizes="(min-width: 900px) 46vw, 92vw"
+          formats={['avif', 'webp']}
+          loading="lazy"
+        />
+      </figure>
+
+      {
+        quotes.map((quote) => (
+          <blockquote class="bento__quote" data-reveal>
+            <p>{quote}</p>
+            <footer>Google yorumu</footer>
+          </blockquote>
+        ))
+      }
+
+      <div class="bento__strip" data-reveal>
+        <StatusBadge />
+        <ul class="bento__hours">
+          {
+            hours.map((h) => (
+              <li>
+                <span>{h.days}</span>
+                <span class="bento__muted">{h.time}</span>
+              </li>
+            ))
+          }
+        </ul>
+        <p class="bento__price">
+          Kişi başı <strong>{site.priceRange}</strong>
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  import { gsap, allowMotionQuery } from '../scripts/motion';
+
+  const section = document.querySelector<HTMLElement>('.misafir');
+
+  if (section) {
+    gsap.matchMedia().add(allowMotionQuery, () => {
+      gsap.fromTo(
+        section.querySelectorAll('[data-reveal]'),
+        { autoAlpha: 0, y: 26 },
+        {
+          autoAlpha: 1,
+          y: 0,
+          duration: 0.9,
+          stagger: 0.08,
+          ease: 'expo.out',
+          scrollTrigger: { trigger: section, start: 'top 75%' },
+        }
+      );
+
+      // Yıldızlar puanı kadar dolar.
+      gsap.fromTo(
+        section.querySelector('[data-stars]'),
+        { clipPath: 'inset(0 100% 0 0)' },
+        {
+          clipPath: 'inset(0 calc(100% - var(--fill)) 0 0)',
+          duration: 1.2,
+          ease: 'expo.out',
+          scrollTrigger: { trigger: section, start: 'top 70%' },
+        }
+      );
+    });
+  }
+</script>
+
+<style>
+  .misafir {
+    padding-block: clamp(64px, 9vw, 120px);
+  }
+
+  .misafir__title {
+    font-size: clamp(2.75rem, 6.5vw, 6rem);
+  }
+
+  .bento {
+    display: grid;
+    gap: clamp(12px, 1.4vw, 20px);
+    margin-top: clamp(28px, 4vw, 48px);
+  }
+
+  .motion .bento > [data-reveal] {
+    visibility: hidden;
+  }
+
+  .bento__rating {
+    display: grid;
+    align-content: center;
+    justify-items: start;
+    gap: 0.5rem;
+    padding: clamp(24px, 3vw, 40px);
+    border-radius: var(--radius-media);
+    background:
+      radial-gradient(90% 80% at 15% 10%, rgb(252 72 36 / 0.16), transparent 70%),
+      var(--color-is);
+  }
+
+  .bento__score {
+    font-size: clamp(5rem, 12vw, 9rem);
+    line-height: 0.8;
+  }
+
+  .bento__stars {
+    position: relative;
+    display: inline-grid;
+  }
+
+  .bento__stars-base,
+  .bento__stars-fill {
+    display: flex;
+    gap: 0.15rem;
+  }
+
+  .bento__stars-base {
+    color: rgb(241 232 216 / 0.18);
+  }
+
+  .bento__stars-fill {
+    position: absolute;
+    inset: 0;
+    color: var(--color-koz);
+    clip-path: inset(0 calc(100% - var(--fill)) 0 0);
+  }
+
+  .bento__count {
+    display: grid;
+    gap: 0.15rem;
+    margin-top: 0.35rem;
+    font-weight: 600;
+  }
+
+  .bento__checked {
+    color: var(--color-kul);
+    font-size: 0.8125rem;
+    font-weight: 400;
+  }
+
+  .bento__review {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.6rem;
+    color: var(--color-koz);
+    font-weight: 600;
+  }
+
+  .bento__photo {
+    overflow: hidden;
+    border-radius: var(--radius-media);
+    background-color: var(--color-is);
+  }
+
+  .bento__photo :global(picture),
+  .bento__photo :global(img) {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  .bento__photo :global(img) {
+    object-fit: cover;
+  }
+
+  .bento__quote {
+    display: grid;
+    align-content: center;
+    gap: 0.75rem;
+    padding: clamp(20px, 2.4vw, 32px) 0 0;
+    box-shadow: inset 0 1px 0 rgb(241 232 216 / 0.14);
+  }
+
+  .bento__quote p {
+    font-family: var(--font-display);
+    font-size: clamp(1.4rem, 2.1vw, 1.9rem);
+    font-weight: 600;
+    line-height: 1.12;
+  }
+
+  .bento__quote footer {
+    color: var(--color-kul);
+    font-size: 0.875rem;
+  }
+
+  .bento__strip {
+    display: grid;
+    gap: 1.25rem;
+    padding: clamp(20px, 2.4vw, 32px);
+    border-radius: var(--radius-media);
+    background-color: var(--color-is);
+  }
+
+  .bento__hours {
+    display: grid;
+    gap: 0.3rem;
+    font-size: 0.95rem;
+  }
+
+  .bento__hours li {
+    display: flex;
+    flex-wrap: wrap;
+    column-gap: 0.75rem;
+  }
+
+  .bento__muted {
+    color: var(--color-kul);
+  }
+
+  .bento__price strong {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    font-weight: 700;
+  }
+
+  @media (min-width: 900px) {
+    .bento {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .bento__rating {
+      grid-column: 1;
+      grid-row: 1 / 3;
+    }
+
+    .bento__photo {
+      grid-column: 2 / 4;
+      grid-row: 1;
+      aspect-ratio: 16 / 9;
+    }
+
+    .bento__quote {
+      grid-row: 2;
+    }
+
+    .bento__strip {
+      grid-column: 1 / -1;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 2rem;
+    }
+
+    .bento__hours {
+      grid-template-columns: repeat(2, auto);
+      justify-content: start;
+      column-gap: 2.5rem;
+    }
+  }
+</style>

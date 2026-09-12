@@ -1,0 +1,254 @@
+---
+import { Picture } from 'astro:assets';
+import Icon from './Icon.astro';
+import Skewer from './Skewer.astro';
+import StatusBadge from './StatusBadge.astro';
+import { site } from '../data/site';
+import heroPhoto from '../assets/food/hero-kofte.jpg';
+---
+
+<section class="hero" data-hero aria-labelledby="hero-baslik">
+  <canvas class="hero__embers" aria-hidden="true" data-embers></canvas>
+
+  <div class="container-site hero__grid">
+    <div class="hero__copy">
+      <div data-fade data-hide-until-motion>
+        <StatusBadge />
+      </div>
+
+      <h1 id="hero-baslik" class="hero__title display">
+        <span class="sr-only">Etin en güzel hali</span>
+        {/* Şiş harflerin arkasından geçer, aralarından görünür. Harflerin içinden geçtiğinde
+            E gibi yatay kollu harfler okunmuyordu. */}
+        <span class="hero__line hero__line--pierced" aria-hidden="true" data-pierce>
+          <span class="hero__skewer" data-skewer><Skewer tone="steel" /></span>
+          <span class="mask hero__text"><span data-rise>Etin en</span></span>
+        </span>
+        <span class="hero__line" aria-hidden="true">
+          <span class="mask"><span data-rise>güzel hali.</span></span>
+        </span>
+      </h1>
+
+      <p class="hero__lead" data-fade data-hide-until-motion>
+        Eryaman'da köz ciğer şiş, odun ateşinde pide ve şifa dolu kemik suyu çorbalar.
+      </p>
+
+      <div class="hero__actions" data-fade data-hide-until-motion>
+        <a class="btn btn-koz" href="/menu">Menüyü gör</a>
+        <a class="btn btn-line" href={site.phone.href} aria-label={`Telefonla ara: ${site.phone.display}`}>
+          <Icon name="phone-bold" size={18} />
+          <span>{site.phone.display}</span>
+        </a>
+      </div>
+    </div>
+
+    <div class="hero__media">
+      <div class="hero__photo" data-hero-photo>
+        <Picture
+          src={heroPhoto}
+          alt="Tahta tabakta ızgara köfte, köz domates, köz biber, patates kızartması ve soğan"
+          widths={[480, 720, 960, 1200]}
+          sizes="(min-width: 1024px) 38vw, 92vw"
+          formats={['avif', 'webp']}
+          loading="eager"
+          fetchpriority="high"
+        />
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  import { gsap, allowMotionQuery } from '../scripts/motion';
+  import { startEmbers } from '../scripts/embers';
+
+  const hero = document.querySelector<HTMLElement>('[data-hero]');
+
+  if (hero) {
+    const q = gsap.utils.selector(hero);
+    const mm = gsap.matchMedia();
+
+    mm.add(allowMotionQuery, () => {
+      const intro = gsap.timeline({ defaults: { ease: 'expo.out' } });
+      intro
+        .fromTo(
+          q('[data-hero-photo]'),
+          { clipPath: 'inset(100% 0% 0% 0% round 20px)' },
+          { clipPath: 'inset(0% 0% 0% 0% round 20px)', duration: 1.4, ease: 'expo.inOut' },
+          0
+        )
+        .fromTo(q('[data-hero-photo] img'), { scale: 1.28 }, { scale: 1, duration: 2.2 }, 0)
+        .fromTo(
+          q('[data-rise]'),
+          { yPercent: 112, autoAlpha: 0 },
+          { yPercent: 0, autoAlpha: 1, duration: 1.15, stagger: 0.07 },
+          0.25
+        )
+        .fromTo(q('[data-skewer]'), { xPercent: -115 }, { xPercent: 0, duration: 1.25, ease: 'power4.out' }, 0.75)
+        .to(q('[data-pierce]'), { y: -5, duration: 0.12, yoyo: true, repeat: 1, ease: 'power2.out' }, 1.08)
+        .fromTo(
+          q('[data-fade]'),
+          { autoAlpha: 0, y: 18 },
+          { autoAlpha: 1, y: 0, duration: 0.9, stagger: 0.08 },
+          0.9
+        );
+
+      const scrollOut = { trigger: hero, start: 'top top', end: 'bottom top', scrub: true };
+      gsap.to(q('[data-hero-photo] img'), { yPercent: 9, ease: 'none', scrollTrigger: scrollOut });
+      gsap.to(q('[data-skewer]'), { x: () => window.innerWidth * 0.14, ease: 'none', scrollTrigger: scrollOut });
+
+      const canvas = hero.querySelector<HTMLCanvasElement>('[data-embers]');
+      const stopEmbers = canvas ? startEmbers(canvas) : () => {};
+      return () => stopEmbers();
+    });
+  }
+</script>
+
+<style>
+  .hero {
+    position: relative;
+    isolation: isolate;
+    display: flex;
+    align-items: center;
+    min-height: 100svh;
+    padding-top: calc(var(--header-h) + clamp(20px, 5vh, 64px));
+    padding-bottom: clamp(40px, 8vh, 96px);
+    overflow: clip;
+  }
+
+  /* Fotoğrafın arkasından yayılan köz ışığı */
+  .hero::before {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    right: -20%;
+    bottom: -35%;
+    width: 90%;
+    height: 90%;
+    background: radial-gradient(closest-side, rgb(252 72 36 / 0.16), rgb(252 72 36 / 0.04) 55%, transparent);
+    pointer-events: none;
+  }
+
+  .hero__embers {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+
+  .hero__grid {
+    display: grid;
+    gap: clamp(32px, 5vw, 64px);
+    align-items: center;
+  }
+
+  .hero__copy {
+    position: relative;
+    z-index: 3;
+  }
+
+  .hero__title {
+    margin-block: 0.32em 0.28em;
+    font-size: clamp(3.75rem, 19vw, 9rem);
+    font-weight: 850;
+    /* Her satır ayrı maskede; noktaların üst satıra girmemesi için 0.95'in altına inilmiyor */
+    line-height: 0.95;
+  }
+
+  .hero__line {
+    position: relative;
+    display: block;
+  }
+
+  .hero__text {
+    position: relative;
+    z-index: 2;
+  }
+
+  .hero__skewer {
+    position: absolute;
+    z-index: 1;
+    top: 0.34em;
+    left: -0.4em;
+    width: calc(min(100vw, 1360px) - 2 * var(--gutter) + 0.4em);
+    font-size: inherit;
+    line-height: 0;
+  }
+
+  .motion .hero__skewer {
+    transform: translateX(-115%);
+  }
+
+  .hero__lead {
+    max-width: 34ch;
+    font-size: clamp(1.0625rem, 1.25vw, 1.25rem);
+    color: rgb(241 232 216 / 0.8);
+  }
+
+  .hero__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 2rem;
+  }
+
+  .hero__media {
+    position: relative;
+    z-index: 1;
+  }
+
+  .hero__photo {
+    position: relative;
+    overflow: hidden;
+    aspect-ratio: 5 / 6;
+    border-radius: var(--radius-media);
+    background-color: var(--color-is);
+  }
+
+  .motion .hero__photo {
+    clip-path: inset(100% 0% 0% 0% round 20px);
+  }
+
+  .hero__photo::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, transparent 62%, rgb(15 16 14 / 0.38));
+    pointer-events: none;
+  }
+
+  .hero__photo :global(picture),
+  .hero__photo :global(img) {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  .hero__photo :global(img) {
+    object-fit: cover;
+    object-position: 50% 50%;
+  }
+
+  @media (max-width: 479px) {
+    .hero__actions .btn {
+      flex: 1 1 100%;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .hero__grid {
+      grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+    }
+
+    .hero__title {
+      font-size: clamp(6rem, 10.2vw, 10rem);
+    }
+
+    .hero__photo {
+      max-height: 74svh;
+      margin-left: auto;
+    }
+  }
+</style>

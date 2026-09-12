@@ -1,0 +1,220 @@
+---
+import { Image } from 'astro:assets';
+import Icon from './Icon.astro';
+import logoLight from '../assets/brand/miqqo-logo-light.png';
+import { site, fullAddress } from '../data/site';
+import { groupedHours } from '../lib/hours';
+
+const hours = groupedHours();
+const year = new Date().getFullYear();
+const signOff = 'Afiyet olsun.';
+---
+
+<footer class="site-footer">
+  <div class="container-site">
+    <div class="site-footer__top">
+      <Image src={logoLight} alt="Ciğerci Miqqo logosu" width={150} densities={[1, 2]} class="site-footer__logo" />
+      <p class="site-footer__word display" aria-label={signOff} data-footer-word>
+        {
+          [...signOff].map((char) => (
+            <span class="mask site-footer__char" aria-hidden="true">
+              <span data-rise>{char === ' ' ? ' ' : char}</span>
+            </span>
+          ))
+        }
+      </p>
+    </div>
+
+    <div class="site-footer__grid">
+      <div>
+        <h2 class="site-footer__heading">Adres</h2>
+        <p>{fullAddress}</p>
+        <a class="site-footer__link link-underline" href={site.links.directions} rel="noopener" target="_blank">
+          Yol tarifi al
+        </a>
+      </div>
+
+      <div>
+        <h2 class="site-footer__heading">Saatler</h2>
+        <ul class="site-footer__list">
+          {
+            hours.map((h) => (
+              <li>
+                <span>{h.days}</span>
+                <span class="site-footer__muted">{h.time}</span>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+
+      <div>
+        <h2 class="site-footer__heading">İletişim</h2>
+        <ul class="site-footer__list">
+          <li><a class="link-underline" href={site.phone.href}>{site.phone.display}</a></li>
+          <li><a class="link-underline" href={`mailto:${site.email}`}>{site.email}</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <h2 class="site-footer__heading">Takip edin</h2>
+        <ul class="site-footer__list">
+          <li>
+            <a class="site-footer__social" href={site.links.instagram} rel="noopener" target="_blank">
+              <Icon name="instagram-logo-bold" size={18} />
+              <span class="link-underline">{site.links.instagramHandle}</span>
+            </a>
+          </li>
+          <li>
+            <a class="site-footer__social" href={site.links.facebook} rel="noopener" target="_blank">
+              <Icon name="facebook-logo-bold" size={18} />
+              <span class="link-underline">Facebook</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="site-footer__bottom">
+      <p>© {year} {site.name}</p>
+      <nav aria-label="Alt menü" class="site-footer__nav">
+        <a class="link-underline" href="/menu">Menü</a>
+        <a class="link-underline" href="/iletisim">İletişim</a>
+        <a class="link-underline" href={site.links.googleReview} rel="noopener" target="_blank">Google'da yorum yaz</a>
+      </nav>
+    </div>
+  </div>
+</footer>
+
+<script>
+  import { gsap, allowMotionQuery } from '../scripts/motion';
+
+  const word = document.querySelector<HTMLElement>('[data-footer-word]');
+  if (word) {
+    gsap.matchMedia().add(allowMotionQuery, () => {
+      gsap.fromTo(
+        word.querySelectorAll('[data-rise]'),
+        { yPercent: 112, autoAlpha: 0 },
+        {
+          yPercent: 0,
+          autoAlpha: 1,
+          duration: 1.1,
+          stagger: 0.035,
+          ease: 'expo.out',
+          scrollTrigger: { trigger: word, start: 'top 95%' },
+        }
+      );
+    });
+  }
+</script>
+
+<style>
+  .site-footer {
+    position: relative;
+    margin-top: clamp(64px, 10vw, 140px);
+    padding-top: clamp(48px, 7vw, 96px);
+    padding-bottom: max(28px, env(safe-area-inset-bottom));
+    box-shadow: inset 0 1px 0 rgb(241 232 216 / 0.08);
+    font-size: 0.95rem;
+  }
+
+  .site-footer__top {
+    display: grid;
+    gap: 1.5rem;
+  }
+
+  .site-footer__top :global(.site-footer__logo) {
+    width: 120px;
+    height: auto;
+  }
+
+  .site-footer__word {
+    display: flex;
+    flex-wrap: nowrap;
+    font-size: clamp(3.4rem, 15.4vw, 14rem);
+    line-height: 0.86;
+    color: var(--color-lavas);
+  }
+
+  .site-footer__grid {
+    display: grid;
+    gap: 2.25rem 2rem;
+    margin-top: clamp(40px, 6vw, 80px);
+  }
+
+  .site-footer__heading {
+    margin-bottom: 0.6rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-kul);
+  }
+
+  .site-footer__list {
+    display: grid;
+    gap: 0.35rem;
+  }
+
+  .site-footer__list li {
+    display: flex;
+    flex-wrap: wrap;
+    column-gap: 0.75rem;
+  }
+
+  .site-footer__muted {
+    color: var(--color-kul);
+  }
+
+  .site-footer__link {
+    display: inline-block;
+    margin-top: 0.6rem;
+    color: var(--color-koz);
+    font-weight: 600;
+  }
+
+  .site-footer__social {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .site-footer__bottom {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: clamp(48px, 6vw, 72px);
+    padding-top: 1.5rem;
+    box-shadow: inset 0 1px 0 rgb(241 232 216 / 0.08);
+    color: var(--color-kul);
+    font-size: 0.875rem;
+  }
+
+  .site-footer__nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.25rem;
+  }
+
+  @media (min-width: 640px) {
+    .site-footer__grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .site-footer__top {
+      grid-template-columns: auto 1fr;
+      align-items: end;
+      gap: 3rem;
+    }
+
+    .site-footer__word {
+      justify-content: flex-end;
+    }
+
+    .site-footer__grid {
+      grid-template-columns: 1.3fr 1fr 1fr 0.8fr;
+    }
+  }
+</style>

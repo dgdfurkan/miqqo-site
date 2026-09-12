@@ -1,0 +1,116 @@
+---
+import '../styles/global.css';
+import { getImage } from 'astro:assets';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import { site } from '../data/site';
+import ogSource from '../assets/food/kasarli-kofte-tahta.jpg';
+import displayLatin from '@fontsource-variable/big-shoulders/files/big-shoulders-latin-opsz-normal.woff2?url';
+import displayLatinExt from '@fontsource-variable/big-shoulders/files/big-shoulders-latin-ext-opsz-normal.woff2?url';
+import sansLatin from '@fontsource-variable/figtree/files/figtree-latin-wght-normal.woff2?url';
+
+interface Props {
+  title?: string;
+  description?: string;
+  noindex?: boolean;
+}
+
+const { title, description = site.description, noindex = false } = Astro.props;
+
+const fullTitle = title ? `${title} | ${site.name}` : `${site.name} | Eryaman ciğer, kebap, pide ve çorba`;
+const canonical = new URL(Astro.url.pathname, Astro.site);
+const og = await getImage({ src: ogSource, width: 1200, height: 630, fit: 'cover', format: 'jpg' });
+const ogUrl = new URL(og.src, Astro.site);
+
+const dayCodes = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const hourGroups = new Map<string, string[]>();
+for (const h of site.hours) {
+  const key = `${h.open}|${h.close}`;
+  hourGroups.set(key, [...(hourGroups.get(key) ?? []), dayCodes[h.day]]);
+}
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Restaurant',
+  name: site.name,
+  url: site.url,
+  image: ogUrl.href,
+  telephone: '+903122721309',
+  email: site.email,
+  priceRange: site.priceRange,
+  servesCuisine: ['Türk mutfağı', 'Kebap', 'Ciğer', 'Pide', 'Çorba'],
+  hasMenu: new URL('/menu', site.url).href,
+  acceptsReservations: true,
+  address: {
+    '@type': 'PostalAddress',
+    streetAddress: `${site.address.district} ${site.address.street}`,
+    addressLocality: site.address.city,
+    addressRegion: site.address.province,
+    postalCode: site.address.postalCode,
+    addressCountry: 'TR',
+  },
+  geo: { '@type': 'GeoCoordinates', latitude: site.geo.lat, longitude: site.geo.lng },
+  openingHoursSpecification: [...hourGroups].map(([key, days]) => {
+    const [opens, closes] = key.split('|');
+    return { '@type': 'OpeningHoursSpecification', dayOfWeek: days, opens, closes };
+  }),
+  sameAs: [site.links.instagram, site.links.facebook, site.links.googleMaps],
+};
+---
+
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    {noindex && <meta name="robots" content="noindex" />}
+    <meta name="theme-color" content="#0f100e" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="format-detection" content="telephone=no" />
+
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+
+    <link rel="preload" as="font" type="font/woff2" href={displayLatin} crossorigin />
+    <link rel="preload" as="font" type="font/woff2" href={displayLatinExt} crossorigin />
+    <link rel="preload" as="font" type="font/woff2" href={sansLatin} crossorigin />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="tr_TR" />
+    <meta property="og:site_name" content={site.name} />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogUrl} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+
+    <script is:inline>
+      (function () {
+        var d = document.documentElement;
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+        d.classList.add('motion');
+        setTimeout(function () {
+          if (!d.classList.contains('motion-ready')) d.classList.remove('motion');
+        }, 3000);
+      })();
+    </script>
+  </head>
+  <body>
+    <a href="#icerik" class="skip-link">İçeriğe geç</a>
+    <Header />
+    <main id="icerik">
+      <slot />
+    </main>
+    <Footer />
+    <div class="grain" aria-hidden="true"></div>
+  </body>
+</html>

@@ -1,0 +1,402 @@
+---
+import { Image } from 'astro:assets';
+import Icon from './Icon.astro';
+import StatusBadge from './StatusBadge.astro';
+import wordmark from '../assets/brand/miqqo-wordmark.png';
+import { site } from '../data/site';
+
+const path = Astro.url.pathname.replace(/\/$/, '') || '/';
+const onHome = path === '/';
+
+const nav = [
+  { href: '/menu', label: 'Menü', current: path === '/menu' },
+  { href: onHome ? '#siparis' : '/#siparis', label: 'Sipariş', current: false },
+  { href: '/iletisim', label: 'İletişim', current: path === '/iletisim' },
+];
+---
+
+<header class="site-header" data-header>
+  <div class="container-site site-header__bar">
+    <a href="/" class="site-header__brand" aria-label="Ciğerci Miqqo ana sayfa">
+      <Image src={wordmark} alt="" width={132} densities={[1, 2]} loading="eager" />
+    </a>
+
+    <nav class="site-header__nav" aria-label="Ana menü">
+      {
+        nav.map((item) => (
+          <a href={item.href} class="site-header__link" aria-current={item.current ? 'page' : undefined}>
+            {item.label}
+          </a>
+        ))
+      }
+    </nav>
+
+    <div class="site-header__actions">
+      <a class="btn btn-koz site-header__call" href={site.phone.href} aria-label={`Telefonla ara: ${site.phone.display}`}>
+        <Icon name="phone-bold" size={18} />
+        <span>{site.phone.display}</span>
+      </a>
+      <a class="site-header__icon" href={site.phone.href} aria-label={`Telefonla ara: ${site.phone.display}`}>
+        <Icon name="phone-bold" size={20} />
+      </a>
+      <button
+        class="site-header__icon"
+        type="button"
+        aria-controls="mobil-menu"
+        aria-expanded="false"
+        aria-label="Menüyü aç"
+        data-nav-open
+      >
+        <Icon name="list-bold" size={22} />
+      </button>
+    </div>
+  </div>
+
+</header>
+
+<div class="scroll-skewer" aria-hidden="true">
+  <span data-progress></span>
+</div>
+
+<dialog id="mobil-menu" class="mobile-nav" aria-label="Site menüsü" data-nav>
+  <div class="container-site mobile-nav__top">
+    <Image src={wordmark} alt="" width={132} densities={[1, 2]} />
+    <button type="button" class="site-header__icon" aria-label="Menüyü kapat" data-nav-close>
+      <Icon name="x-bold" size={22} />
+    </button>
+  </div>
+
+  <nav class="container-site mobile-nav__links" aria-label="Mobil menü">
+    {
+      nav.map((item) => (
+        <a href={item.href} class="mobile-nav__link display" aria-current={item.current ? 'page' : undefined}>
+          <span data-nav-word>{item.label}</span>
+        </a>
+      ))
+    }
+  </nav>
+
+  <div class="container-site mobile-nav__foot" data-nav-foot>
+    <StatusBadge />
+    <a class="btn btn-koz" href={site.phone.href} aria-label={`Telefonla ara: ${site.phone.display}`}>
+      <Icon name="phone-bold" size={18} />
+      <span>{site.phone.display}</span>
+    </a>
+    <a class="mobile-nav__social" href={site.links.instagram} rel="noopener" target="_blank">
+      <Icon name="instagram-logo-bold" size={20} />
+      <span>{site.links.instagramHandle}</span>
+    </a>
+  </div>
+</dialog>
+
+<script>
+  import { gsap, ScrollTrigger, lockScroll, prefersReducedMotion, scrollToTarget } from '../scripts/motion';
+
+  const root = document.documentElement;
+  const header = document.querySelector<HTMLElement>('[data-header]');
+  const progress = document.querySelector<HTMLElement>('[data-progress]');
+
+  if (header) {
+    const apply = (y: number, direction: number, ratio: number) => {
+      header.classList.toggle('is-scrolled', y > 12);
+      const hide = direction === 1 && y > 360 && !root.classList.contains('nav-open');
+      header.classList.toggle('is-hidden', hide);
+      root.classList.toggle('is-header-hidden', hide);
+      // Uç (7px) başlangıçta ekran dışında kalsın.
+      if (progress) progress.style.transform = `translateX(calc(${(ratio - 1) * 100}% - ${(1 - ratio) * 8}px))`;
+    };
+
+    ScrollTrigger.create({
+      start: 0,
+      end: 'max',
+      onUpdate: (self) => apply(self.scroll(), self.direction, self.progress),
+    });
+    apply(window.scrollY, -1, 0);
+  }
+
+  const dialog = document.querySelector<HTMLDialogElement>('[data-nav]');
+  const openButton = document.querySelector<HTMLButtonElement>('[data-nav-open]');
+
+  if (dialog && openButton) {
+    const words = dialog.querySelectorAll('[data-nav-word]');
+    const foot = dialog.querySelector('[data-nav-foot]');
+    let closing = false;
+
+    const finishClose = () => {
+      dialog.close();
+      closing = false;
+      openButton.setAttribute('aria-expanded', 'false');
+      root.classList.remove('nav-open');
+      lockScroll(false);
+      gsap.set(dialog, { clearProps: 'clipPath' });
+    };
+
+    const open = () => {
+      dialog.showModal();
+      openButton.setAttribute('aria-expanded', 'true');
+      root.classList.add('nav-open');
+      lockScroll(true);
+      if (prefersReducedMotion()) return;
+      gsap
+        .timeline()
+        .fromTo(dialog, { clipPath: 'inset(0% 0% 100% 0%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: 0.7, ease: 'expo.inOut' })
+        .fromTo(words, { yPercent: 110 }, { yPercent: 0, duration: 0.9, stagger: 0.06, ease: 'expo.out' }, 0.25)
+        .fromTo(foot, { autoAlpha: 0, y: 16 }, { autoAlpha: 1, y: 0, duration: 0.6, ease: 'expo.out' }, 0.45);
+    };
+
+    const close = () => {
+      if (closing || !dialog.open) return;
+      if (prefersReducedMotion()) return finishClose();
+      closing = true;
+      gsap.to(dialog, { clipPath: 'inset(0% 0% 100% 0%)', duration: 0.5, ease: 'expo.inOut', onComplete: finishClose });
+    };
+
+    openButton.addEventListener('click', open);
+    dialog.querySelector('[data-nav-close]')?.addEventListener('click', close);
+    dialog.addEventListener('cancel', (event) => {
+      event.preventDefault();
+      close();
+    });
+
+    dialog.querySelectorAll<HTMLAnchorElement>('a[href]').forEach((link) => {
+      link.addEventListener('click', (event) => {
+        const samePageHash = link.hash && link.pathname === window.location.pathname;
+        if (!samePageHash) return close();
+        const target = document.querySelector<HTMLElement>(link.hash);
+        if (!target) return;
+        event.preventDefault();
+        finishClose();
+        scrollToTarget(target);
+      });
+    });
+
+    window.matchMedia('(min-width: 768px)').addEventListener('change', (e) => {
+      if (e.matches && dialog.open) finishClose();
+    });
+  }
+</script>
+
+<style>
+  /* Üstte her zaman ince bir perde var: içerik logonun ve menünün altından
+     geçerken üst üste binmiyor. */
+  .site-header {
+    position: fixed;
+    inset: 0 0 auto;
+    z-index: 60;
+    background: linear-gradient(180deg, rgb(15 16 14 / 0.97) 0 62%, rgb(15 16 14 / 0.55) 82%, rgb(15 16 14 / 0));
+    will-change: transform;
+    transition:
+      transform 0.5s var(--ease-expo),
+      background-color 0.4s ease,
+      box-shadow 0.4s ease;
+  }
+
+  /* Mobilde backdrop-filter her karede pahalı; opak zemin kullanılır. */
+  .site-header.is-scrolled {
+    background: rgb(15 16 14 / 0.95);
+    box-shadow: inset 0 -1px 0 rgb(241 232 216 / 0.08);
+  }
+
+  @media (min-width: 768px) {
+    .site-header {
+      background: linear-gradient(180deg, rgb(15 16 14 / 0.92), rgb(15 16 14 / 0.45) 58%, rgb(15 16 14 / 0));
+    }
+
+    .site-header.is-scrolled {
+      background: rgb(15 16 14 / 0.8);
+      backdrop-filter: blur(14px) saturate(140%);
+      -webkit-backdrop-filter: blur(14px) saturate(140%);
+    }
+  }
+
+  .site-header.is-hidden {
+    transform: translateY(-100%);
+  }
+
+  .site-header__bar {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    height: var(--header-h);
+  }
+
+  .site-header__brand {
+    flex: none;
+  }
+
+  .site-header__brand :global(img) {
+    display: block;
+    width: 132px;
+    height: auto;
+  }
+
+  .site-header__nav {
+    display: none;
+    gap: 2rem;
+    margin-left: auto;
+  }
+
+  .site-header__link {
+    padding-block: 0.5rem;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: rgb(241 232 216 / 0.7);
+    transition: color 0.25s ease;
+  }
+
+  .site-header__link:hover,
+  .site-header__link[aria-current='page'] {
+    color: var(--color-lavas);
+  }
+
+  .site-header__actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-left: auto;
+  }
+
+  .site-header__call {
+    display: none;
+    min-height: 2.75rem;
+    padding-inline: 1.1rem;
+    font-size: 0.95rem;
+  }
+
+  .site-header__icon {
+    display: grid;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 9999px;
+    color: var(--color-lavas);
+    box-shadow: inset 0 0 0 1.5px rgb(241 232 216 / 0.2);
+  }
+
+  /* Sayfanın en üstünde duran ilerleme şişi, header gizlenirken de görünür kalır */
+  .scroll-skewer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    left: 0;
+    z-index: 61;
+    height: 6px;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  /* Kaydırdıkça soldan itilen şiş: gövde ve uç */
+  .scroll-skewer span {
+    position: absolute;
+    top: 2px;
+    left: 0;
+    width: calc(100% - 7px);
+    height: 2px;
+    background: linear-gradient(90deg, rgb(252 72 36 / 0), rgb(252 72 36 / 0.9) 30%, var(--color-koz));
+    transform: translateX(calc(-100% - 8px));
+  }
+
+  .scroll-skewer span::after {
+    content: '';
+    position: absolute;
+    top: -2px;
+    right: -7px;
+    border-top: 3px solid transparent;
+    border-bottom: 3px solid transparent;
+    border-left: 7px solid var(--color-koz);
+  }
+
+  @media (min-width: 768px) {
+    .site-header__nav,
+    .site-header__call {
+      display: flex;
+    }
+
+    .site-header__actions {
+      margin-left: 0.5rem;
+    }
+
+    .site-header__icon {
+      display: none;
+    }
+  }
+
+  .mobile-nav {
+    width: 100%;
+    max-width: none;
+    height: 100dvh;
+    max-height: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background-color: var(--color-komur);
+    color: var(--color-lavas);
+  }
+
+  .mobile-nav[open] {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .mobile-nav::backdrop {
+    background: transparent;
+    backdrop-filter: none;
+  }
+
+  .mobile-nav__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: var(--header-h);
+  }
+
+  .mobile-nav__top :global(img) {
+    width: 132px;
+    height: auto;
+  }
+
+  .mobile-nav__top .site-header__icon {
+    display: grid;
+  }
+
+  .mobile-nav__links {
+    display: flex;
+    flex-direction: column;
+    margin-top: 7vh;
+  }
+
+  .mobile-nav__link {
+    display: block;
+    overflow: hidden;
+    padding-block: 0.08em 0.02em;
+    font-size: clamp(3.5rem, 18vw, 6rem);
+    line-height: 0.95;
+  }
+
+  .mobile-nav__link span {
+    display: block;
+  }
+
+  .mobile-nav__link[aria-current='page'] {
+    color: var(--color-koz);
+  }
+
+  .mobile-nav__foot {
+    display: grid;
+    justify-items: start;
+    gap: 1rem;
+    margin-top: auto;
+    padding-bottom: max(1.75rem, env(safe-area-inset-bottom));
+  }
+
+  .mobile-nav__foot .btn {
+    width: 100%;
+  }
+
+  .mobile-nav__social {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--color-kul);
+  }
+</style>

@@ -1,0 +1,141 @@
+---
+import { Picture } from 'astro:assets';
+import Icon from './Icon.astro';
+import { foodImage } from '../lib/images';
+import { site } from '../data/site';
+---
+
+<section class="siparis" id="siparis" aria-labelledby="siparis-baslik">
+  <div class="siparis__bg" aria-hidden="true" data-siparis-bg>
+    <Picture
+      src={foodImage('kasarli-kofte-tahta')}
+      alt=""
+      widths={[900, 1330]}
+      sizes="100vw"
+      formats={['avif', 'webp']}
+      loading="lazy"
+    />
+  </div>
+
+  <div class="container-site siparis__inner">
+    <h2 id="siparis-baslik" class="display siparis__title">
+      <span class="mask"><span data-rise>Acıktıysan</span></span>
+      <span class="mask"><span data-rise>doğru yerdesin.</span></span>
+    </h2>
+
+    <p class="siparis__lead">Paket servis ve rezervasyon için bir telefon yeter.</p>
+
+    <div class="siparis__actions">
+      <a class="btn btn-koz" href={site.phone.href} aria-label={`Telefonla ara: ${site.phone.display}`}>
+        <Icon name="phone-bold" size={18} />
+        <span>{site.phone.display}</span>
+      </a>
+      {
+        site.delivery.map((platform) => (
+          <a class="btn btn-line" href={platform.href} rel="noopener" target="_blank">
+            <Icon name="moped-bold" size={18} />
+            <span>{platform.name}</span>
+          </a>
+        ))
+      }
+    </div>
+  </div>
+</section>
+
+<script>
+  import { gsap, allowMotionQuery } from '../scripts/motion';
+
+  const section = document.querySelector<HTMLElement>('.siparis');
+
+  if (section) {
+    gsap.matchMedia().add(allowMotionQuery, () => {
+      gsap.fromTo(
+        section.querySelectorAll('[data-rise]'),
+        { yPercent: 112, autoAlpha: 0 },
+        {
+          yPercent: 0,
+          autoAlpha: 1,
+          duration: 1.1,
+          stagger: 0.08,
+          ease: 'expo.out',
+          scrollTrigger: { trigger: section, start: 'top 75%' },
+        }
+      );
+
+      // Bant ile içerik arasında derinlik
+      gsap.fromTo(
+        section.querySelector('[data-siparis-bg] img'),
+        { yPercent: -8 },
+        {
+          yPercent: 8,
+          ease: 'none',
+          scrollTrigger: { trigger: section, start: 'top bottom', end: 'bottom top', scrub: true },
+        }
+      );
+    });
+  }
+</script>
+
+<style>
+  .siparis {
+    position: relative;
+    display: flex;
+    align-items: center;
+    min-height: min(68svh, 620px);
+    padding-block: clamp(56px, 9vw, 120px);
+    overflow: hidden;
+    isolation: isolate;
+  }
+
+  .siparis__bg {
+    position: absolute;
+    inset: -10% 0;
+    z-index: -1;
+  }
+
+  .siparis__bg :global(picture),
+  .siparis__bg :global(img) {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  .siparis__bg :global(img) {
+    object-fit: cover;
+    object-position: 50% 45%;
+  }
+
+  .siparis__bg::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(90deg, rgb(15 16 14 / 0.94) 10%, rgb(15 16 14 / 0.72) 55%, rgb(15 16 14 / 0.5)),
+      linear-gradient(0deg, var(--color-komur), rgb(15 16 14 / 0.1) 40%);
+  }
+
+  .siparis__title {
+    font-size: clamp(2.75rem, 9vw, 6.5rem);
+    line-height: 0.98;
+  }
+
+  .siparis__lead {
+    max-width: 32ch;
+    margin-top: 1.25rem;
+    color: rgb(241 232 216 / 0.85);
+    font-size: 1.0625rem;
+  }
+
+  .siparis__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 2rem;
+  }
+
+  @media (max-width: 479px) {
+    .siparis__actions .btn {
+      flex: 1 1 100%;
+    }
+  }
+</style>

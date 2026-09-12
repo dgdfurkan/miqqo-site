@@ -1,0 +1,85 @@
+---
+// Açık/kapalı durumu. Statik çıktıda her gün doğru olan metin durur, tarayıcıda İstanbul saatine göre güncellenir.
+interface Props {
+  class?: string;
+}
+
+const { class: className } = Astro.props;
+---
+
+<p class:list={['status', className]} data-status>
+  <span class="status__dot" aria-hidden="true"></span>
+  <span class="status__label" data-status-label>Her gün açık</span>
+  <span class="status__detail" data-status-detail>02:00'ye kadar</span>
+</p>
+
+<script>
+  import { openStatus, statusText } from '../lib/hours';
+
+  function update() {
+    const status = openStatus();
+    const text = statusText(status);
+    document.querySelectorAll<HTMLElement>('[data-status]').forEach((el) => {
+      el.dataset.open = String(status.open);
+      el.querySelector('[data-status-label]')!.textContent = text.label;
+      el.querySelector('[data-status-detail]')!.textContent = text.detail;
+    });
+  }
+
+  update();
+  setInterval(update, 60_000);
+</script>
+
+<style>
+  .status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0.45rem 0.95rem 0.45rem 0.8rem;
+    border-radius: 9999px;
+    background-color: rgb(241 232 216 / 0.06);
+    box-shadow: inset 0 0 0 1px rgb(241 232 216 / 0.1);
+    font-size: 0.875rem;
+    line-height: 1.2;
+  }
+
+  .status__dot {
+    position: relative;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    background-color: var(--color-kul);
+  }
+
+  [data-open='true'] .status__dot {
+    background-color: var(--color-koz);
+  }
+
+  [data-open='true'] .status__dot::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background-color: var(--color-koz);
+    animation: status-pulse 2.2s var(--ease-soft) infinite;
+  }
+
+  .status__label {
+    font-weight: 600;
+  }
+
+  .status__detail {
+    color: var(--color-kul);
+  }
+
+  @keyframes status-pulse {
+    from {
+      transform: scale(1);
+      opacity: 0.75;
+    }
+    to {
+      transform: scale(3.2);
+      opacity: 0;
+    }
+  }
+</style>

@@ -1,0 +1,155 @@
+---
+import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
+import Konum from '../components/Konum.astro';
+import { site, fullAddress } from '../data/site';
+---
+
+<Base
+  title="İletişim"
+  description={`Ciğerci Miqqo: ${fullAddress}. Telefon ${site.phone.display}. Paket servis, rezervasyon ve yol tarifi.`}
+>
+  <section class="iletisim">
+    <div class="container-site">
+      <h1 class="display iletisim__title">İletişim</h1>
+
+      <div class="iletisim__grid">
+        <a class="card" href={site.phone.href} aria-label={`Telefonla ara: ${site.phone.display}`}>
+          <Icon name="phone-bold" size={22} class="card__icon" />
+          <span class="card__label">Telefon</span>
+          <span class="display card__value">{site.phone.display}</span>
+          <span class="card__hint">Paket servis ve rezervasyon</span>
+        </a>
+
+        <a class="card" href={site.links.directions} rel="noopener" target="_blank">
+          <Icon name="map-pin-bold" size={22} class="card__icon" />
+          <span class="card__label">Adres</span>
+          <span class="card__value card__value--sm">{fullAddress}</span>
+          <span class="card__hint">Yol tarifi al</span>
+        </a>
+
+        <a class="card" href={`mailto:${site.email}`}>
+          <Icon name="paper-plane-tilt-bold" size={22} class="card__icon" />
+          <span class="card__label">E-posta</span>
+          <span class="card__value card__value--sm">{site.email}</span>
+        </a>
+
+        <div class="card card--static">
+          <Icon name="moped-bold" size={22} class="card__icon" />
+          <span class="card__label">Online sipariş</span>
+          <span class="card__links">
+            {
+              site.delivery.map((platform) => (
+                <a class="link-underline" href={platform.href} rel="noopener" target="_blank">
+                  {platform.name}
+                </a>
+              ))
+            }
+          </span>
+        </div>
+
+        <div class="card card--static">
+          <Icon name="instagram-logo-bold" size={22} class="card__icon" />
+          <span class="card__label">Sosyal</span>
+          <span class="card__links">
+            <a class="link-underline" href={site.links.instagram} rel="noopener" target="_blank">
+              {site.links.instagramHandle}
+            </a>
+            <a class="link-underline" href={site.links.facebook} rel="noopener" target="_blank">Facebook</a>
+          </span>
+        </div>
+
+        <a class="card" href={site.links.googleReview} rel="noopener" target="_blank">
+          <Icon name="star-fill" size={22} class="card__icon" />
+          <span class="card__label">Deneyiminiz</span>
+          <span class="card__value card__value--sm">Google'da yorum yaz</span>
+          <span class="card__hint">{site.rating.count.toLocaleString('tr-TR')} yorum, {site.rating.value.toLocaleString('tr-TR', { minimumFractionDigits: 1 })} puan</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <Konum />
+</Base>
+
+<style>
+  .iletisim {
+    padding-top: calc(var(--header-h) + clamp(28px, 6vw, 64px));
+  }
+
+  .iletisim__title {
+    font-size: clamp(3.25rem, 12vw, 8rem);
+    line-height: 0.85;
+  }
+
+  .iletisim__grid {
+    display: grid;
+    gap: clamp(12px, 1.4vw, 18px);
+    margin-top: clamp(28px, 4vw, 48px);
+  }
+
+  .card {
+    display: grid;
+    align-content: start;
+    gap: 0.35rem;
+    padding: clamp(20px, 2.6vw, 30px);
+    border-radius: var(--radius-media);
+    background-color: var(--color-is);
+    transition: background-color 0.3s ease, transform 0.3s var(--ease-expo);
+  }
+
+  a.card:hover {
+    background-color: var(--color-is-2);
+    transform: translateY(-2px);
+  }
+
+  .card :global(.card__icon) {
+    color: var(--color-koz);
+  }
+
+  .card__label {
+    margin-top: 0.5rem;
+    color: var(--color-kul);
+    font-size: 0.8125rem;
+    font-weight: 600;
+  }
+
+  .card__value {
+    font-size: clamp(1.5rem, 2.4vw, 2rem);
+    line-height: 1.05;
+  }
+
+  .card__value--sm {
+    font-family: var(--font-sans);
+    font-size: 1.0625rem;
+    font-weight: 500;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
+  .card__hint {
+    color: var(--color-koz);
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+
+  .card__links {
+    display: grid;
+    justify-items: start;
+    gap: 0.3rem;
+    font-size: 1.0625rem;
+    font-weight: 500;
+  }
+
+  @media (min-width: 640px) {
+    .iletisim__grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .iletisim__grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+</style>

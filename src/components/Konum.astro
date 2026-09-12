@@ -1,0 +1,249 @@
+---
+import { Image } from 'astro:assets';
+import Icon from './Icon.astro';
+import StatusBadge from './StatusBadge.astro';
+import wordmark from '../assets/brand/miqqo-wordmark.png';
+import { site, fullAddress } from '../data/site';
+import { groupedHours } from '../lib/hours';
+
+const hours = groupedHours();
+---
+
+<section class="konum" id="konum" aria-labelledby="konum-baslik">
+  <div class="container-site konum__grid">
+    <div class="konum__info">
+      <h2 id="konum-baslik" class="display konum__title">Neredeyiz?</h2>
+
+      <p class="konum__address">{fullAddress}</p>
+
+      <StatusBadge class="konum__status" />
+
+      <ul class="konum__hours">
+        {
+          hours.map((h) => (
+            <li>
+              <span>{h.days}</span>
+              <span class="konum__muted">{h.time}</span>
+            </li>
+          ))
+        }
+      </ul>
+
+      <div class="konum__actions">
+        <a class="btn btn-koz" href={site.links.directions} rel="noopener" target="_blank">
+          <Icon name="navigation-arrow-bold" size={18} />
+          <span>Yol tarifi al</span>
+        </a>
+        <a class="btn btn-line" href={site.phone.href} aria-label={`Telefonla ara: ${site.phone.display}`}>
+          <Icon name="phone-bold" size={18} />
+          <span>{site.phone.display}</span>
+        </a>
+      </div>
+    </div>
+
+    {/* Harita bölüm görünüşe girdiğinde yüklenir: sayfa açılışında Google'a istek gitmez,
+        kaydırma yolunda üçüncü taraf çerçevesi boyanmaz. */}
+    <div class="konum__map" data-map>
+      <div class="konum__facade" data-map-facade>
+        <Image src={wordmark} alt="Ciğerci Miqqo" width={168} densities={[1, 2]} class="konum__facade-logo" />
+        <p class="konum__facade-text">{fullAddress}</p>
+        <button class="btn btn-line" type="button" data-map-load>Haritayı göster</button>
+      </div>
+
+      <div class="konum__badge" aria-hidden="true">
+        <Image src={wordmark} alt="" width={104} densities={[1, 2]} />
+        <span>Ciğer, pide, kebap</span>
+      </div>
+    </div>
+  </div>
+
+  <template data-map-template>
+    <iframe
+      class="konum__frame"
+      src={site.links.mapEmbed}
+      title="Ciğerci Miqqo konumu, Google Haritalar"
+      loading="lazy"
+      referrerpolicy="no-referrer-when-downgrade"
+      allowfullscreen></iframe>
+  </template>
+
+  <noscript>
+    <div class="container-site">
+      <iframe
+        class="konum__frame konum__frame--noscript"
+        src={site.links.mapEmbed}
+        title="Ciğerci Miqqo konumu, Google Haritalar"
+        loading="lazy"
+        referrerpolicy="no-referrer-when-downgrade"></iframe>
+    </div>
+  </noscript>
+</section>
+
+<script>
+  const holder = document.querySelector<HTMLElement>('[data-map]');
+  const template = document.querySelector<HTMLTemplateElement>('[data-map-template]');
+
+  if (holder && template) {
+    const load = () => {
+      if (holder.dataset.loaded) return;
+      holder.dataset.loaded = 'true';
+      holder.querySelector('[data-map-facade]')?.remove();
+      holder.prepend(template.content.cloneNode(true));
+    };
+
+    holder.querySelector('[data-map-load]')?.addEventListener('click', load);
+
+    if ('IntersectionObserver' in window) {
+      const observer = new IntersectionObserver(
+        (entries) => {
+          if (entries.some((e) => e.isIntersecting)) {
+            load();
+            observer.disconnect();
+          }
+        },
+        { rootMargin: '400px 0px' }
+      );
+      observer.observe(holder);
+    } else {
+      load();
+    }
+  }
+</script>
+
+<style>
+  .konum {
+    padding-block: clamp(56px, 9vw, 120px);
+  }
+
+  .konum__grid {
+    display: grid;
+    gap: clamp(28px, 4vw, 56px);
+  }
+
+  .konum__title {
+    font-size: clamp(2.75rem, 6.5vw, 5.5rem);
+  }
+
+  .konum__address {
+    max-width: 26ch;
+    margin-top: 1rem;
+    font-size: clamp(1.125rem, 1.6vw, 1.375rem);
+    color: rgb(241 232 216 / 0.85);
+  }
+
+  .konum__info :global(.konum__status) {
+    margin-top: 1.5rem;
+  }
+
+  .konum__hours {
+    display: grid;
+    gap: 0.35rem;
+    margin-top: 1.25rem;
+  }
+
+  .konum__hours li {
+    display: flex;
+    flex-wrap: wrap;
+    column-gap: 0.75rem;
+  }
+
+  .konum__muted {
+    color: var(--color-kul);
+  }
+
+  .konum__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 2rem;
+  }
+
+  .konum__map {
+    position: relative;
+    display: grid;
+    overflow: hidden;
+    min-height: clamp(300px, 46svh, 460px);
+    border-radius: var(--radius-media);
+    background-color: var(--color-is);
+    box-shadow: inset 0 0 0 1px rgb(241 232 216 / 0.12);
+  }
+
+  .konum__facade {
+    display: grid;
+    align-content: center;
+    justify-items: start;
+    gap: 1rem;
+    padding: clamp(24px, 3vw, 40px);
+  }
+
+  .konum__facade :global(.konum__facade-logo) {
+    width: 168px;
+    height: auto;
+  }
+
+  .konum__facade-text {
+    max-width: 30ch;
+    color: rgb(241 232 216 / 0.8);
+  }
+
+  .konum__map :global(.konum__frame) {
+    display: block;
+    grid-area: 1 / 1;
+    width: 100%;
+    height: 100%;
+    min-height: clamp(300px, 46svh, 460px);
+    border: 0;
+  }
+
+  /* Harita koyu temaya yaklaşsın. Mobilde uygulanmıyor: çerçeveye filtre,
+     küçük cihazlarda boyama maliyetini artırıyor. */
+  @media (min-width: 768px) {
+    .konum__map :global(.konum__frame) {
+      filter: invert(0.9) hue-rotate(185deg) saturate(0.78) contrast(0.92) brightness(1.04);
+    }
+  }
+
+  /* Harita üstünde markalı künye */
+  .konum__badge {
+    position: absolute;
+    bottom: 0.75rem;
+    left: 0.75rem;
+    z-index: 2;
+    display: grid;
+    gap: 0.3rem;
+    padding: 0.7rem 0.9rem;
+    border-radius: 14px;
+    background-color: rgb(15 16 14 / 0.88);
+    box-shadow: inset 0 0 0 1px rgb(241 232 216 / 0.14);
+    pointer-events: none;
+  }
+
+  .konum__badge :global(img) {
+    width: 104px;
+    height: auto;
+  }
+
+  .konum__badge span {
+    color: var(--color-kul);
+    font-size: 0.75rem;
+  }
+
+  .konum__frame--noscript {
+    min-height: 320px;
+    margin-top: 1rem;
+    border-radius: var(--radius-media);
+  }
+
+  @media (max-width: 479px) {
+    .konum__actions .btn {
+      flex: 1 1 100%;
+    }
+  }
+
+  @media (min-width: 900px) {
+    .konum__grid {
+      grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+      align-items: center;
+    }
+  }
+</style>

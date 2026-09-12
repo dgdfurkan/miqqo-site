@@ -1,0 +1,836 @@
+---
+import { Picture } from 'astro:assets';
+import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
+import { menu, type MenuItem } from '../data/menu';
+import { foodImage, hasFoodImage } from '../lib/images';
+import { normalizeTr } from '../lib/text';
+import { site, formatPrice } from '../data/site';
+
+const total = menu.reduce((sum, c) => sum + c.items.length, 0);
+
+const hasDetails = (item: MenuItem) =>
+  !!(item.ingredients || item.description || item.kcal || item.allergens?.length || item.image || item.variants);
+
+const searchKey = (item: MenuItem) =>
+  normalizeTr([item.name, item.subtitle, item.ingredients, item.description].filter(Boolean).join(' '));
+
+const detailed = menu.flatMap((c) => c.items.filter(hasDetails));
+---
+
+<Base
+  title="Menü"
+  description="Ciğerci Miqqo menüsü: çorbalar, kebaplar, pideler, dürümler, tavalar, kiremit, kiloluk menüler, tatlılar ve içecekler. Güncel fiyat, kalori ve alerjen bilgisi."
+>
+  <section class="menu-head">
+    <div class="container-site">
+      <h1 class="display menu-head__title">Menü</h1>
+      <p class="menu-head__lead">
+        {total} ürün, {menu.length} kategori. Kalori ve alerjen bilgisi için ürüne dokunun.
+      </p>
+
+      <div class="search">
+        <Icon name="magnifying-glass-bold" size={20} class="search__icon" />
+        <input
+          class="search__input"
+          type="search"
+          id="menu-arama"
+          placeholder="Ciğer, pide, çorba, ayran"
+          autocomplete="off"
+          aria-label="Menüde ara"
+          aria-describedby="arama-sonuc"
+          data-search
+        />
+        <button class="search__clear" type="button" aria-label="Aramayı temizle" hidden data-search-clear>
+          <Icon name="x-bold" size={16} />
+        </button>
+      </div>
+      <p class="search__result" id="arama-sonuc" role="status" data-search-count></p>
+    </div>
+  </section>
+
+  <nav class="catnav" aria-label="Menü kategorileri" data-catnav>
+    <div class="catnav__strip" data-catnav-strip>
+      {
+        menu.map((category, i) => (
+          <a
+            href={`#${category.id}`}
+            class="catnav__chip"
+            aria-current={i === 0 ? 'true' : undefined}
+            data-catnav-chip={category.id}
+          >
+            {category.short}
+          </a>
+        ))
+      }
+      <span class="catnav__indicator" aria-hidden="true" data-catnav-indicator></span>
+    </div>
+  </nav>
+
+  <div class="container-site menu-body">
+    {
+      menu.map((category) => (
+        <section class="cat" id={category.id} aria-labelledby={`${category.id}-baslik`} data-category={category.id}>
+          <header class="cat__head">
+            <h2 id={`${category.id}-baslik`} class="display cat__title">
+              {category.name}
+            </h2>
+            {category.note ? <p class="cat__note">{category.note}</p> : null}
+          </header>
+
+          <ul class:list={['cat__items', !category.items.some((i) => hasFoodImage(i.image)) && 'cat__items--flat']}>
+            {category.items.map((item) => {
+              const detail = hasDetails(item);
+              const Row = detail ? 'button' : 'div';
+              return (
+                <li class="item" data-item data-search={searchKey(item)}>
+                  <Row
+                    class="item__row"
+                    type={detail ? 'button' : undefined}
+                    aria-haspopup={detail ? 'dialog' : undefined}
+                    data-open-item={detail ? item.id : undefined}
+                  >
+                    {hasFoodImage(item.image) ? (
+                      <span class="item__thumb stage">
+                        <Picture
+                          class:list={['cutout', item.framed && 'cutout--framed']}
+                          src={foodImage(item.image)}
+                          alt=""
+                          widths={[112, 224]}
+                          sizes="104px"
+                          formats={['webp']}
+                          loading="lazy"
+                        />
+                      </span>
+                    ) : null}
+
+                    <span class="item__text">
+                      <span class="item__name display">
+                        {item.name}
+                        {item.subtitle ? <span class="item__subtitle">{item.subtitle}</span> : null}
+                      </span>
+                      {item.ingredients || item.description ? (
+                        <span class="item__desc">{item.ingredients ?? item.description}</span>
+                      ) : null}
+                    </span>
+
+                    {item.variants ? (
+                      <span class="item__prices">
+                        {item.variants.map((v) => (
+                          <span class="item__price-row">
+                            <span class="item__price-label">{v.label}</span>
+                            <span class="item__price display">{formatPrice(v.price)}</span>
+                          </span>
+                        ))}
+                      </span>
+                    ) : item.price !== undefined ? (
+                      <span class="item__price display">{formatPrice(item.price)}</span>
+                    ) : null}
+                  </Row>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      ))
+    }
+  </div>
+
+  {
+    detailed.map((item) => (
+      <template data-item-template={item.id}>
+        <div class="sheet__scroll">
+          {hasFoodImage(item.image) ? (
+            <div class="sheet__photo stage">
+              <Picture
+                class="cutout"
+                src={foodImage(item.image)}
+                alt={item.name}
+                widths={[420, 640]}
+                sizes="(min-width: 640px) 560px, 92vw"
+                formats={['webp']}
+              />
+            </div>
+          ) : null}
+
+          <div class="sheet__text">
+            <h3 class="display sheet__name">{item.name}</h3>
+            {item.subtitle ? <p class="sheet__subtitle">{item.subtitle}</p> : null}
+            {item.price !== undefined ? <p class="display sheet__price">{formatPrice(item.price)}</p> : null}
+
+            {item.variants ? (
+              <ul class="sheet__variants">
+                {item.variants.map((v) => (
+                  <li>
+                    <span class="sheet__variant-label">{v.label}</span>
+                    <span class="display sheet__variant-price">{formatPrice(v.price)}</span>
+                    {v.note ? <span class="sheet__variant-note">{v.note}</span> : null}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+
+            {item.description ? <p class="sheet__desc">{item.description}</p> : null}
+
+            {item.ingredients ? (
+              <div class="sheet__field">
+                <span class="sheet__label">İçindekiler</span>
+                <p>{item.ingredients}</p>
+              </div>
+            ) : null}
+
+            {item.kcal ? (
+              <div class="sheet__field">
+                <span class="sheet__label">Kalori</span>
+                <p>{item.kcal} kcal</p>
+              </div>
+            ) : null}
+
+            {item.allergens?.length ? (
+              <div class="sheet__field">
+                <span class="sheet__label">Alerjenler</span>
+                <ul class="sheet__chips">
+                  {item.allergens.map((a) => (
+                    <li>{a}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+
+            {item.note ? <p class="sheet__note">{item.note}</p> : null}
+
+            <a class="btn btn-koz sheet__cta" href={site.phone.href} aria-label={`Telefonla ara: ${site.phone.display}`}>
+              <Icon name="phone-bold" size={18} />
+              <span>{site.phone.display}</span>
+            </a>
+          </div>
+        </div>
+      </template>
+    ))
+  }
+
+  <dialog class="sheet" aria-label="Ürün detayı" data-sheet>
+    <div class="sheet__panel" data-sheet-panel>
+      <button class="sheet__close" type="button" aria-label="Kapat" data-sheet-close>
+        <Icon name="x-bold" size={20} />
+      </button>
+      <div data-sheet-content></div>
+    </div>
+  </dialog>
+</Base>
+
+<script>
+  import { gsap, ScrollTrigger, lockScroll, prefersReducedMotion, allowMotionQuery } from '../scripts/motion';
+  import { normalizeTr } from '../lib/text';
+
+  // Kategori çubuğu: aktif kategoriyi gösteren şiş göstergesi
+  const strip = document.querySelector<HTMLElement>('[data-catnav-strip]');
+  const chips = [...document.querySelectorAll<HTMLAnchorElement>('[data-catnav-chip]')];
+  const indicator = document.querySelector<HTMLElement>('[data-catnav-indicator]');
+  const sections = [...document.querySelectorAll<HTMLElement>('[data-category]')];
+
+  const moveIndicator = (chip: HTMLElement) => {
+    if (!indicator) return;
+    indicator.style.width = `${chip.offsetWidth}px`;
+    indicator.style.transform = `translateX(${chip.offsetLeft}px)`;
+  };
+
+  const setActive = (id: string) => {
+    const chip = chips.find((c) => c.dataset.catnavChip === id);
+    if (!chip) return;
+    chips.forEach((c) => (c === chip ? c.setAttribute('aria-current', 'true') : c.removeAttribute('aria-current')));
+    moveIndicator(chip);
+    if (strip) {
+      const left = chip.offsetLeft - strip.clientWidth / 2 + chip.offsetWidth / 2;
+      strip.scrollTo({ left, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
+    }
+  };
+
+  if (chips.length && sections.length) {
+    moveIndicator(chips[0]);
+    sections.forEach((section) => {
+      ScrollTrigger.create({
+        trigger: section,
+        start: 'top 35%',
+        end: 'bottom 35%',
+        onToggle: (self) => self.isActive && setActive(section.dataset.category!),
+      });
+    });
+    window.addEventListener('resize', () => {
+      const current = chips.find((c) => c.hasAttribute('aria-current'));
+      if (current) moveIndicator(current);
+    });
+  }
+
+  // Arama
+  const input = document.querySelector<HTMLInputElement>('[data-search]');
+  const clear = document.querySelector<HTMLButtonElement>('[data-search-clear]');
+  const count = document.querySelector<HTMLElement>('[data-search-count]');
+  const items = [...document.querySelectorAll<HTMLElement>('[data-item]')];
+  const catnav = document.querySelector<HTMLElement>('[data-catnav]');
+
+  const runSearch = () => {
+    if (!input) return;
+    const query = normalizeTr(input.value.trim());
+    if (clear) clear.hidden = !input.value;
+
+    if (!query) {
+      items.forEach((item) => (item.hidden = false));
+      sections.forEach((section) => (section.hidden = false));
+      if (count) count.textContent = '';
+      if (catnav) catnav.hidden = false;
+      ScrollTrigger.refresh();
+      return;
+    }
+
+    let found = 0;
+    items.forEach((item) => {
+      const match = (item.dataset.search ?? '').includes(query);
+      item.hidden = !match;
+      if (match) found += 1;
+    });
+    sections.forEach((section) => {
+      section.hidden = ![...section.querySelectorAll<HTMLElement>('[data-item]')].some((item) => !item.hidden);
+    });
+    if (catnav) catnav.hidden = true;
+    if (count) count.textContent = found ? `${found} ürün bulundu` : 'Sonuç yok, başka bir kelime deneyin.';
+    ScrollTrigger.refresh();
+  };
+
+  input?.addEventListener('input', runSearch);
+  clear?.addEventListener('click', () => {
+    if (!input) return;
+    input.value = '';
+    input.focus();
+    runSearch();
+  });
+
+  // Ürün detayı
+  const sheet = document.querySelector<HTMLDialogElement>('[data-sheet]');
+  const panel = sheet?.querySelector<HTMLElement>('[data-sheet-panel]');
+  const content = sheet?.querySelector<HTMLElement>('[data-sheet-content]');
+  let sheetClosing = false;
+
+  const finishClose = () => {
+    if (!sheet) return;
+    sheet.close();
+    sheetClosing = false;
+    lockScroll(false);
+    content?.replaceChildren();
+    if (panel) gsap.set(panel, { clearProps: 'all' });
+  };
+
+  const closeSheet = () => {
+    if (!sheet?.open || sheetClosing) return;
+    if (prefersReducedMotion() || !panel) return finishClose();
+    sheetClosing = true;
+    gsap.to(panel, { yPercent: 8, autoAlpha: 0, duration: 0.32, ease: 'power2.in', onComplete: finishClose });
+  };
+
+  const openSheet = (id: string) => {
+    const template = document.querySelector<HTMLTemplateElement>(`[data-item-template="${id}"]`);
+    if (!sheet || !content || !template) return;
+    content.replaceChildren(template.content.cloneNode(true));
+    sheet.showModal();
+    lockScroll(true);
+    if (prefersReducedMotion() || !panel) return;
+    gsap.fromTo(
+      panel,
+      { yPercent: window.innerWidth < 640 ? 14 : 6, autoAlpha: 0 },
+      { yPercent: 0, autoAlpha: 1, duration: 0.5, ease: 'expo.out' }
+    );
+  };
+
+  document.querySelectorAll<HTMLElement>('[data-open-item]').forEach((row) => {
+    row.addEventListener('click', () => openSheet(row.dataset.openItem!));
+  });
+
+  sheet?.querySelector('[data-sheet-close]')?.addEventListener('click', closeSheet);
+  sheet?.addEventListener('cancel', (event) => {
+    event.preventDefault();
+    closeSheet();
+  });
+  sheet?.addEventListener('click', (event) => {
+    if (event.target === sheet) closeSheet();
+  });
+
+  // Kategori başlıkları görünürken bir kez yükselir
+  gsap.matchMedia().add(allowMotionQuery, () => {
+    document.querySelectorAll<HTMLElement>('.cat').forEach((section) => {
+      gsap.fromTo(
+        section.querySelectorAll('.cat__title, .item'),
+        { autoAlpha: 0, y: 18 },
+        {
+          autoAlpha: 1,
+          y: 0,
+          duration: 0.6,
+          stagger: 0.03,
+          ease: 'expo.out',
+          scrollTrigger: { trigger: section, start: 'top 85%' },
+        }
+      );
+    });
+  });
+</script>
+
+<style>
+  /* Kategori bağlantısıyla gelindiğinde başlık, header ve yapışkan kategori çubuğunun altında kalmasın */
+  :global(html) {
+    --anchor-offset: calc(var(--header-h) + 3.75rem);
+  }
+
+  .menu-head {
+    padding-top: calc(var(--header-h) + clamp(28px, 6vw, 64px));
+    padding-bottom: clamp(20px, 3vw, 32px);
+  }
+
+  .menu-head__title {
+    font-size: clamp(4rem, 16vw, 11rem);
+    line-height: 0.82;
+  }
+
+  .menu-head__lead {
+    max-width: 40ch;
+    margin-top: 1rem;
+    color: rgb(241 232 216 / 0.8);
+  }
+
+  .search {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    max-width: 26rem;
+    margin-top: 1.75rem;
+    padding: 0 1rem;
+    border-radius: 9999px;
+    background-color: var(--color-is);
+    box-shadow: inset 0 0 0 1px rgb(241 232 216 / 0.12);
+  }
+
+  .search:focus-within {
+    box-shadow: inset 0 0 0 1.5px var(--color-koz);
+  }
+
+  .search :global(.search__icon) {
+    flex: none;
+    color: var(--color-kul);
+  }
+
+  .search__input {
+    flex: 1;
+    min-height: 3.25rem;
+    border: 0;
+    background: none;
+    color: var(--color-lavas);
+    font: inherit;
+    outline: none;
+  }
+
+  .search__input::placeholder {
+    color: rgb(241 232 216 / 0.55);
+  }
+
+  .search__input::-webkit-search-cancel-button {
+    display: none;
+  }
+
+  .search__clear {
+    display: grid;
+    place-items: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 9999px;
+    background-color: rgb(241 232 216 / 0.12);
+    color: var(--color-lavas);
+  }
+
+  .search__result {
+    min-height: 1.25rem;
+    margin-top: 0.75rem;
+    color: var(--color-kul);
+    font-size: 0.9rem;
+  }
+
+  .catnav {
+    position: sticky;
+    top: var(--header-h);
+    z-index: 40;
+    background-color: var(--color-komur);
+    box-shadow: inset 0 -1px 0 rgb(241 232 216 / 0.1);
+    will-change: transform;
+    transition: transform 0.5s var(--ease-expo);
+  }
+
+  /* Bulanık zemin yalnız masaüstünde; mobilde her karede pahalı */
+  @media (min-width: 768px) {
+    .catnav {
+      background-color: rgb(15 16 14 / 0.9);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+  }
+
+  :global(.is-header-hidden) .catnav {
+    transform: translateY(calc(-1 * var(--header-h)));
+  }
+
+  .catnav__strip {
+    position: relative;
+    display: flex;
+    gap: 0.35rem;
+    overflow-x: auto;
+    padding: 0.65rem var(--gutter) 0.85rem;
+    scrollbar-width: none;
+  }
+
+  .catnav__strip::-webkit-scrollbar {
+    display: none;
+  }
+
+  .catnav__chip {
+    flex: none;
+    padding: 0.5rem 0.9rem;
+    border-radius: 9999px;
+    color: rgb(241 232 216 / 0.7);
+    font-size: 0.95rem;
+    font-weight: 500;
+    white-space: nowrap;
+    transition: color 0.25s ease, background-color 0.25s ease;
+  }
+
+  .catnav__chip:hover {
+    background-color: rgb(241 232 216 / 0.07);
+    color: var(--color-lavas);
+  }
+
+  .catnav__chip[aria-current='true'] {
+    color: var(--color-lavas);
+  }
+
+  /* Aktif kategoriyi gösteren şiş */
+  .catnav__indicator {
+    position: absolute;
+    bottom: 0.3rem;
+    left: 0;
+    height: 2px;
+    background-color: var(--color-koz);
+    transition: transform 0.5s var(--ease-expo), width 0.5s var(--ease-expo);
+  }
+
+  .catnav__indicator::after {
+    content: '';
+    position: absolute;
+    top: -2px;
+    right: -6px;
+    border-top: 3px solid transparent;
+    border-bottom: 3px solid transparent;
+    border-left: 6px solid var(--color-koz);
+  }
+
+  .menu-body {
+    padding-top: clamp(28px, 4vw, 48px);
+  }
+
+  .cat + .cat {
+    margin-top: clamp(48px, 6vw, 88px);
+  }
+
+  .cat__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.35rem 1rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .cat__title {
+    font-size: clamp(2rem, 4.4vw, 3.5rem);
+  }
+
+  .cat__note {
+    color: var(--color-kul);
+    font-size: 0.9rem;
+  }
+
+  .item {
+    box-shadow: inset 0 -1px 0 rgb(241 232 216 / 0.1);
+  }
+
+  .item__row {
+    display: grid;
+    grid-template-columns: 72px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: clamp(12px, 1.6vw, 20px);
+    width: 100%;
+    padding-block: 0.9rem;
+    text-align: left;
+    transition: background-color 0.25s ease;
+  }
+
+  button.item__row:hover {
+    background-color: rgb(241 232 216 / 0.04);
+  }
+
+  button.item__row:hover .item__name {
+    color: var(--color-koz);
+  }
+
+  .item__thumb {
+    aspect-ratio: 1;
+    border-radius: 12px;
+    background-color: rgb(241 232 216 / 0.03);
+  }
+
+  .item__thumb.stage::before {
+    inset: 22% 10% 10%;
+  }
+
+  /* Basılı menüde fotoğrafı olmayan kategoriler (çorba, tatlı, içecek): küçük görsel kolonu hiç açılmaz */
+  .cat__items--flat .item__row,
+  .item__row:not(:has(.item__thumb)) {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .item__text {
+    display: grid;
+    gap: 0.2rem;
+  }
+
+  .item__name {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.5rem;
+    font-size: clamp(1.15rem, 1.8vw, 1.45rem);
+    line-height: 1.05;
+    text-transform: none;
+    font-weight: 700;
+    transition: color 0.25s ease;
+  }
+
+  .item__subtitle {
+    padding: 0.1rem 0.5rem;
+    border-radius: 9999px;
+    background-color: rgb(241 232 216 / 0.1);
+    color: var(--color-kul);
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
+
+  .item__desc {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    color: var(--color-kul);
+    font-size: 0.9rem;
+    line-height: 1.45;
+  }
+
+  .item__price {
+    font-size: clamp(1.3rem, 2vw, 1.6rem);
+    line-height: 1;
+    color: var(--color-lavas);
+  }
+
+  /* İki fiyatlı ürünler (Eko / Porsiyon, Çocuk / Porsiyon, 500 gr / 1 kg):
+     fiyatlar tek fiyatlı ürünlerle aynı kolonda ve aynı puntoda, etiketi solunda. */
+  .item__prices {
+    display: grid;
+    gap: 0.3rem;
+  }
+
+  .item__price-row {
+    display: grid;
+    grid-template-columns: auto auto;
+    align-items: baseline;
+    justify-content: end;
+    gap: 0.6rem;
+  }
+
+  .item__price-label {
+    color: var(--color-kul);
+    font-size: 0.8125rem;
+    white-space: nowrap;
+  }
+
+  .item__prices .item__price {
+    font-size: clamp(1.15rem, 1.7vw, 1.4rem);
+  }
+
+  /* Ürün detayı */
+  .sheet {
+    width: 100%;
+    max-width: none;
+    max-height: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--color-lavas);
+  }
+
+  .sheet[open] {
+    display: grid;
+    align-items: end;
+    justify-items: center;
+    position: fixed;
+    inset: 0;
+    height: 100dvh;
+  }
+
+  .sheet__panel {
+    position: relative;
+    width: 100%;
+    max-height: 92dvh;
+    overflow: hidden;
+    border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
+    background-color: var(--color-is);
+    box-shadow: 0 -20px 60px rgb(0 0 0 / 0.5);
+  }
+
+  .sheet__scroll {
+    max-height: 92dvh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .sheet__close {
+    position: absolute;
+    top: 0.85rem;
+    right: 0.85rem;
+    z-index: 2;
+    display: grid;
+    place-items: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 9999px;
+    background-color: rgb(15 16 14 / 0.7);
+    color: var(--color-lavas);
+    backdrop-filter: blur(8px);
+  }
+
+  .sheet__photo {
+    aspect-ratio: 4 / 3;
+    padding: 1rem 1rem 0;
+  }
+
+  .sheet__text {
+    display: grid;
+    gap: 0.6rem;
+    padding: clamp(20px, 4vw, 32px) clamp(20px, 4vw, 32px) max(1.5rem, env(safe-area-inset-bottom));
+  }
+
+  .sheet__name {
+    font-size: clamp(1.9rem, 5vw, 2.6rem);
+    line-height: 1;
+    text-transform: none;
+  }
+
+  .sheet__subtitle {
+    color: var(--color-kul);
+    font-size: 0.9rem;
+  }
+
+  .sheet__price {
+    color: var(--color-koz);
+    font-size: clamp(1.8rem, 4vw, 2.25rem);
+    line-height: 1;
+  }
+
+  .sheet__variants {
+    display: grid;
+    gap: 0.5rem;
+    margin-block: 0.25rem;
+  }
+
+  .sheet__variants li {
+    display: grid;
+    grid-template-columns: auto auto 1fr;
+    align-items: baseline;
+    gap: 0.75rem;
+    padding-bottom: 0.5rem;
+    box-shadow: inset 0 -1px 0 rgb(241 232 216 / 0.1);
+  }
+
+  .sheet__variant-price {
+    color: var(--color-koz);
+    font-size: 1.35rem;
+  }
+
+  .sheet__variant-note {
+    color: var(--color-kul);
+    font-size: 0.85rem;
+  }
+
+  .sheet__desc,
+  .sheet__field p {
+    color: rgb(241 232 216 / 0.85);
+    font-size: 0.95rem;
+  }
+
+  .sheet__field {
+    display: grid;
+    gap: 0.2rem;
+    margin-top: 0.4rem;
+  }
+
+  .sheet__label {
+    color: var(--color-kul);
+    font-size: 0.8125rem;
+    font-weight: 600;
+  }
+
+  .sheet__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-top: 0.2rem;
+  }
+
+  .sheet__chips li {
+    padding: 0.25rem 0.7rem;
+    border-radius: 9999px;
+    background-color: rgb(252 72 36 / 0.14);
+    color: var(--color-lavas);
+    font-size: 0.8125rem;
+  }
+
+  .sheet__note {
+    color: var(--color-kul);
+    font-size: 0.875rem;
+  }
+
+  .sheet__cta {
+    justify-self: start;
+    margin-top: 0.75rem;
+  }
+
+  @media (min-width: 1024px) {
+    /* Geniş ekranda iki kolon: satırlar arası boşluk küçülür, liste kısalır */
+    .cat__items {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      column-gap: clamp(24px, 3vw, 56px);
+    }
+  }
+
+  @media (min-width: 640px) {
+    .sheet[open] {
+      align-items: center;
+      padding: 2rem;
+    }
+
+    .sheet__panel {
+      max-width: 34rem;
+      border-radius: var(--radius-sheet);
+    }
+
+    .item__row {
+      grid-template-columns: 104px minmax(0, 1fr) auto;
+      padding-block: 1.1rem;
+    }
+  }
+</style>

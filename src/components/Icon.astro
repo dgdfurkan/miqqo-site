@@ -1,0 +1,32 @@
+---
+// Phosphor ikonları (@iconify-json/ph). Ağırlık ada eklenir: "phone-bold", "star-fill".
+import { icons } from '@iconify-json/ph';
+
+interface Props {
+  name: string;
+  size?: number | string;
+  class?: string;
+  label?: string;
+}
+
+const { name, size = '1em', class: className, label } = Astro.props;
+
+const aliases = (icons.aliases ?? {}) as Record<string, { parent: string }>;
+const data = icons.icons[aliases[name]?.parent ?? name];
+if (!data) throw new Error(`Phosphor ikonu bulunamadı: ${name}`);
+
+const width = data.width ?? icons.width ?? 256;
+const height = data.height ?? icons.height ?? 256;
+---
+
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox={`0 0 ${width} ${height}`}
+  width={size}
+  height={size}
+  class={className}
+  role={label ? 'img' : undefined}
+  aria-label={label}
+  aria-hidden={label ? undefined : 'true'}
+  focusable="false"
+><Fragment set:html={data.body} /></svg>

@@ -1,0 +1,89 @@
+---
+// Sayfadaki tek marquee. Menünün genişliğini tek bakışta verir; kaydırma hızına ve yönüne tepki verir.
+const words = ['Ciğer şiş', 'Adana', 'Urfa', 'Lahmacun', 'Kuşbaşılı pide', 'İşkembe', 'Kelle paça', 'Miqqo tava', 'Künefe'];
+---
+
+<div class="marquee" aria-hidden="true" data-marquee>
+  <div class="marquee__track" data-marquee-track>
+    {
+      [0, 1].map(() => (
+        <div class="marquee__group">
+          {words.map((word) => (
+            <span class="marquee__item">
+              <span class="marquee__word display">{word}</span>
+              <span class="marquee__ring" />
+            </span>
+          ))}
+        </div>
+      ))
+    }
+  </div>
+</div>
+
+<script>
+  import { gsap, ScrollTrigger, allowMotionQuery } from '../scripts/motion';
+
+  const marquee = document.querySelector<HTMLElement>('[data-marquee]');
+
+  if (marquee) {
+    gsap.matchMedia().add(allowMotionQuery, () => {
+      const track = marquee.querySelector('[data-marquee-track]');
+      const loop = gsap.to(track, { xPercent: -50, duration: 42, ease: 'none', repeat: -1 });
+      // Geriye oynatırken başa takılmasın diye zamanı ileri al.
+      loop.totalTime(42 * 500);
+
+      const trigger = ScrollTrigger.create({
+        trigger: marquee,
+        start: 'top bottom',
+        end: 'bottom top',
+        onUpdate(self) {
+          const boost = Math.min(Math.abs(self.getVelocity()) / 220, 7);
+          gsap.to(loop, { timeScale: self.direction * (1 + boost), duration: 0.2, overwrite: true });
+          gsap.to(loop, { timeScale: self.direction, duration: 1.4, delay: 0.25, ease: 'power2.out' });
+        },
+      });
+
+      return () => {
+        loop.kill();
+        trigger.kill();
+      };
+    });
+  }
+</script>
+
+<style>
+  .marquee {
+    overflow: hidden;
+    padding-block: clamp(18px, 2.8vw, 36px);
+    box-shadow:
+      inset 0 1px 0 rgb(241 232 216 / 0.08),
+      inset 0 -1px 0 rgb(241 232 216 / 0.08);
+  }
+
+  .marquee__track {
+    display: flex;
+    width: max-content;
+  }
+
+  .marquee__group,
+  .marquee__item {
+    display: flex;
+    flex: none;
+    align-items: center;
+  }
+
+  .marquee__word {
+    padding-inline: clamp(18px, 2.4vw, 40px);
+    font-size: clamp(3rem, 8.5vw, 8rem);
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .marquee__ring {
+    flex: none;
+    width: clamp(16px, 1.8vw, 28px);
+    height: clamp(16px, 1.8vw, 28px);
+    border: clamp(3px, 0.32vw, 5px) solid var(--color-koz);
+    border-radius: 50%;
+  }
+</style>

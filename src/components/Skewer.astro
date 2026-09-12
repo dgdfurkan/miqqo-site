@@ -1,0 +1,60 @@
+---
+// Logodaki şiş: halka sap, ince gövde, sivri uç. Boyutlar kapsayıcının font-size'ına göre (em).
+interface Props {
+  tone?: 'steel' | 'koz';
+  class?: string;
+}
+
+const { tone = 'steel', class: className } = Astro.props;
+---
+
+<span class:list={['skewer', `skewer--${tone}`, className]} aria-hidden="true">
+  <span class="skewer__ring"></span>
+  <span class="skewer__rod"></span>
+  <span class="skewer__tip"></span>
+</span>
+
+<style>
+  .skewer {
+    --rod: 0.056em;
+    --ring: 0.32em;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    height: var(--ring);
+    filter: drop-shadow(0 0.04em 0.05em rgb(0 0 0 / 0.6));
+  }
+
+  .skewer--steel {
+    --metal: linear-gradient(180deg, #fbf6ec 0%, #d4cec1 35%, #807c72 64%, #cdc7ba 100%);
+    --metal-solid: #d8d2c5;
+  }
+
+  .skewer--koz {
+    --metal: linear-gradient(180deg, #ff9274 0%, #fc4824 50%, #c63719 100%);
+    --metal-solid: #fc4824;
+  }
+
+  .skewer__ring {
+    flex: none;
+    width: var(--ring);
+    height: var(--ring);
+    border: calc(var(--rod) * 0.9) solid var(--metal-solid);
+    border-radius: 50%;
+    margin-right: calc(var(--rod) * -0.9);
+  }
+
+  .skewer__rod {
+    flex: 1 1 auto;
+    height: var(--rod);
+    background: var(--metal);
+  }
+
+  .skewer__tip {
+    flex: none;
+    width: 0.5em;
+    height: var(--rod);
+    background: var(--metal);
+    clip-path: polygon(0 0, 100% 50%, 0 100%);
+  }
+</style>

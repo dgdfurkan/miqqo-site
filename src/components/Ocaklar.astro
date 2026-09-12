@@ -1,0 +1,285 @@
+---
+import { Picture } from 'astro:assets';
+import { foodImage } from '../lib/images';
+import { menu } from '../data/menu';
+
+// Çorbaların basılı menüde fotoğrafı yok; kazan paneli çorba adlarıyla anlatılıyor.
+const soups = menu
+  .find((c) => c.id === 'corbalar')!
+  .items.filter((item) => item.price !== undefined)
+  .map((item) => item.name);
+
+const ocaklar = [
+  {
+    id: 'mangal',
+    word: 'Mangal',
+    lead: 'Her gün taze ciğer.',
+    body: 'Ciğer şiş, Adana ve Urfa közün üstünde pişer, sıcacık lavaşa sarılıp masaya gelir.',
+    image: 'ciger-sis',
+    alt: 'Tepside sekiz şiş ciğer şiş, yanında lavaş',
+    link: { href: '/menu#kebaplar', label: 'Kebap menüsü' },
+  },
+  {
+    id: 'odun-atesi',
+    word: 'Odun ateşi',
+    lead: 'Odun ateşinde pide çeşitleri.',
+    body: 'Kıymalı, kuşbaşılı, kaşarlı pideler ve ince hamurlu lahmacun, fırından çıktığı gibi.',
+    image: 'karisik-pide',
+    alt: 'Tabakta dilimlenmiş karışık pide',
+    link: { href: '/menu#pideler', label: 'Pide menüsü' },
+  },
+  {
+    id: 'kazan',
+    word: 'Kazan',
+    lead: 'Şifa dolu kemik suyu çorbalar.',
+    body: 'Dokuz çeşit çorba, yanında sarımsağı ve sirkesiyle.',
+    meta: "Pazartesi - Cumartesi 07:00'den, Pazar 08:30'dan itibaren",
+    soups,
+    link: { href: '/menu#corbalar', label: 'Çorba menüsü' },
+  },
+];
+---
+
+<section class="ocaklar" id="ocaklar" aria-labelledby="ocaklar-baslik">
+  <div class="container-site ocaklar__intro">
+    <h2 id="ocaklar-baslik" class="display ocaklar__title">Bir mutfak, üç ocak.</h2>
+  </div>
+
+  <div class="ocaklar__stack">
+    {
+      ocaklar.map((o) => (
+        <article class="ocak" aria-labelledby={`ocak-${o.id}`} data-ocak>
+          <div class="container-site ocak__inner" data-ocak-inner>
+            <h3 id={`ocak-${o.id}`} class="display ocak__word">
+              <span class="mask">
+                <span data-rise>{o.word}</span>
+              </span>
+            </h3>
+
+            {
+              o.image ? (
+                <figure class="ocak__photo stage" data-ocak-photo>
+                  <Picture
+                    class="cutout"
+                    src={foodImage(o.image)}
+                    alt={o.alt}
+                    widths={[360, 540, 720]}
+                    sizes="(min-width: 768px) 42vw, 88vw"
+                    formats={['webp']}
+                    loading="lazy"
+                  />
+                </figure>
+              ) : (
+                <ul class="ocak__soups" data-ocak-photo>
+                  {o.soups!.map((soup) => (
+                    <li>{soup}</li>
+                  ))}
+                </ul>
+              )
+            }
+
+            <div class="ocak__text">
+              <p class="ocak__lead display">{o.lead}</p>
+              <p class="ocak__body">{o.body}</p>
+              {o.meta && <p class="ocak__meta">{o.meta}</p>}
+              <a class="ocak__link link-underline" href={o.link.href}>
+                {o.link.label}
+              </a>
+            </div>
+          </div>
+          <div class="ocak__shade" aria-hidden="true" data-ocak-shade />
+        </article>
+      ))
+    }
+  </div>
+</section>
+
+<script>
+  import { gsap, allowMotionQuery } from '../scripts/motion';
+
+  const panels = gsap.utils.toArray<HTMLElement>('[data-ocak]');
+
+  if (panels.length) {
+    const mm = gsap.matchMedia();
+
+    // Panel görününce başlığı maskeden yükselir, görseli yerine oturur.
+    mm.add(allowMotionQuery, () => {
+      panels.forEach((panel) => {
+        gsap
+          .timeline({ scrollTrigger: { trigger: panel, start: 'top 72%' } })
+          .fromTo(
+            panel.querySelectorAll('[data-rise]'),
+            { yPercent: 112, autoAlpha: 0 },
+            { yPercent: 0, autoAlpha: 1, duration: 1.2, ease: 'expo.out' }
+          )
+          .fromTo(
+            panel.querySelector('[data-ocak-photo]'),
+            { autoAlpha: 0, y: 28, scale: 0.96 },
+            { autoAlpha: 1, y: 0, scale: 1, duration: 1.2, ease: 'expo.out' },
+            0.1
+          );
+      });
+    });
+
+    // Tablet ve üstünde paneller üst üste biner; alttaki geri çekilip kararır.
+    mm.add(`(min-width: 768px) and ${allowMotionQuery}`, () => {
+      panels.forEach((panel, i) => {
+        const next = panels[i + 1];
+        if (!next) return;
+        const covered = { trigger: next, start: 'top bottom', end: 'top top', scrub: true };
+        gsap.to(panel.querySelector('[data-ocak-inner]'), { scale: 0.9, yPercent: -3, ease: 'none', scrollTrigger: covered });
+        gsap.to(panel.querySelector('[data-ocak-shade]'), { opacity: 0.7, ease: 'none', scrollTrigger: covered });
+      });
+    });
+  }
+</script>
+
+<style>
+  .ocaklar {
+    padding-top: clamp(72px, 12vw, 160px);
+  }
+
+  .ocaklar__title {
+    max-width: 12ch;
+    font-size: clamp(3rem, 8vw, 7.5rem);
+  }
+
+  .ocaklar__stack {
+    margin-top: clamp(32px, 5vw, 72px);
+  }
+
+  .ocak {
+    position: relative;
+    overflow: hidden;
+    padding-block: clamp(40px, 7vw, 72px) clamp(24px, 4vw, 48px);
+    border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
+    background:
+      radial-gradient(60% 55% at 78% 60%, rgb(252 72 36 / 0.09), transparent 70%),
+      var(--color-komur);
+    box-shadow: inset 0 1px 0 rgb(241 232 216 / 0.1);
+  }
+
+  .ocak__inner {
+    position: relative;
+    display: grid;
+    gap: 1.5rem;
+    transform-origin: 50% 0%;
+    will-change: transform;
+  }
+
+  .ocak__word {
+    font-size: clamp(4.5rem, 22vw, 16rem);
+    line-height: 0.86;
+  }
+
+  .ocak__photo {
+    aspect-ratio: 4 / 3;
+  }
+
+  .ocak__soups {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-content: center;
+  }
+
+  .ocak__soups li {
+    padding: 0.5rem 1rem;
+    border-radius: 9999px;
+    background-color: rgb(241 232 216 / 0.06);
+    box-shadow: inset 0 0 0 1px rgb(241 232 216 / 0.12);
+    font-family: var(--font-display);
+    font-size: clamp(1.1rem, 1.6vw, 1.5rem);
+    font-weight: 700;
+    line-height: 1.1;
+  }
+
+  .ocak__text {
+    display: grid;
+    gap: 0.75rem;
+    max-width: 34rem;
+  }
+
+  .ocak__lead {
+    font-size: clamp(1.9rem, 3.4vw, 3rem);
+    line-height: 1;
+    text-transform: none;
+    font-weight: 750;
+  }
+
+  .ocak__body {
+    color: rgb(241 232 216 / 0.8);
+    font-size: 1.0625rem;
+  }
+
+  .ocak__meta {
+    color: var(--color-kul);
+    font-size: 0.9rem;
+  }
+
+  .ocak__link {
+    justify-self: start;
+    margin-top: 0.5rem;
+    color: var(--color-koz);
+    font-weight: 600;
+  }
+
+  .ocak__shade {
+    position: absolute;
+    inset: 0;
+    background-color: var(--color-komur);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  @media (min-width: 768px) {
+    /* İçerik panelin üst bandında durur: üzerine binen sonraki panel alt kısmı
+       kapattığı için ortalanmış içerikte fotoğraf ve metin kesiliyordu. */
+    .ocak {
+      position: sticky;
+      top: 0;
+      display: flex;
+      align-items: flex-start;
+      min-height: 100svh;
+      padding-block: calc(var(--header-h) + clamp(16px, 3vh, 40px)) 48px;
+    }
+
+    /* Satırlar içerik kadar yüksek, blok panelde dikey ortalanıyor.
+       Daha önce 1fr satır grid'i gerdiği için başlık tepede kalıyor, fotoğraf panelden taşıyordu. */
+    .ocak__inner {
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      grid-template-rows: auto auto;
+      align-content: start;
+      gap: 0 clamp(24px, 3vw, 48px);
+      width: 100%;
+    }
+
+    .ocak__word {
+      grid-column: 1 / 8;
+      grid-row: 1;
+      font-size: clamp(4.5rem, 11vw, 11rem);
+    }
+
+    .ocak__photo,
+    .ocak__soups {
+      z-index: 1;
+      grid-column: 7 / -1;
+      grid-row: 1 / 3;
+      align-self: center;
+      justify-self: end;
+      width: 100%;
+      height: clamp(240px, 40svh, 400px);
+      margin: 0;
+    }
+
+    .ocak__photo {
+      aspect-ratio: auto;
+    }
+
+    .ocak__text {
+      grid-column: 1 / 7;
+      grid-row: 2;
+      padding-top: clamp(16px, 2vw, 28px);
+    }
+  }
+</style>

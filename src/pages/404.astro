@@ -1,0 +1,55 @@
+---
+import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
+import { site } from '../data/site';
+---
+
+<Base title="Sayfa bulunamadı" noindex>
+  <section class="hata">
+    <div class="container-site">
+      <p class="hata__code display">404</p>
+      <h1 class="display hata__title">Aradığınız sayfa yok.</h1>
+      <p class="hata__lead">Adres değişmiş olabilir. Menüden devam edebilir ya da doğrudan arayabilirsiniz.</p>
+      <div class="hata__actions">
+        <a class="btn btn-koz" href="/menu">Menüyü gör</a>
+        <a class="btn btn-line" href={site.phone.href} aria-label={`Telefonla ara: ${site.phone.display}`}>
+          <Icon name="phone-bold" size={18} />
+          <span>{site.phone.display}</span>
+        </a>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .hata {
+    display: flex;
+    align-items: center;
+    min-height: 76svh;
+    padding-top: calc(var(--header-h) + 40px);
+  }
+
+  .hata__code {
+    color: var(--color-koz);
+    font-size: clamp(5rem, 22vw, 14rem);
+    line-height: 0.8;
+  }
+
+  .hata__title {
+    margin-top: 0.2em;
+    font-size: clamp(2.25rem, 6vw, 4.5rem);
+  }
+
+  .hata__lead {
+    max-width: 40ch;
+    margin-top: 1rem;
+    color: rgb(241 232 216 / 0.8);
+  }
+
+  .hata__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 2rem;
+  }
+</style>
