@@ -1,32 +1,9 @@
 ---
-// Kısa sessiz mutfak görüntüleri. Dosyalar public/video altında, ffmpeg ile 720p,
-// sessiz ve faststart olarak kodlandı. Kaynak yalnız görünüşe girince atanır.
-const clips = [
-  {
-    id: 'fire-grill',
-    title: 'Köz başında',
-    text: 'Ciğer şiş, ateşin üstünde çevrilir.',
-    size: 'buyuk',
-  },
-  {
-    id: 'ocakta-pide',
-    title: 'Odun fırınında',
-    text: 'Pide, fırının ağzında pişer.',
-    size: 'kucuk',
-  },
-  {
-    id: 'usta-mutfakta-yemek-hazirliyor-1',
-    title: 'Ustanın elinden',
-    text: 'Tabak, mutfakta kurulur.',
-    size: 'kucuk',
-  },
-  {
-    id: 'table-show-solen',
-    title: 'Sofra kuruldu',
-    text: 'Mezeler, salata ve sıcak lavaş.',
-    size: 'genis',
-  },
-];
+import { klip, klipPoster, klipSrc, mutfakKlipleri } from '../data/media';
+
+// Kısa sessiz mutfak görüntüleri. Kaynak public/video altında; kayıtlar src/data/media.ts.
+const yerler = ['buyuk', 'kucuk', 'kucuk', 'genis', 'yari', 'yari'];
+const klipListesi = mutfakKlipleri.map((id, i) => ({ ...klip(id), yer: yerler[i] ?? 'yari' }));
 ---
 
 <section class="mutfak" id="mutfak" aria-labelledby="mutfak-baslik">
@@ -36,20 +13,21 @@ const clips = [
 
     <div class="mutfak__grid">
       {
-        clips.map((clip) => (
-          <figure class:list={['klip', `klip--${clip.size}`]} data-klip>
+        klipListesi.map((k) => (
+          <figure class:list={['klip', `klip--${k.yer}`]} data-klip>
             <video
               class="klip__video"
-              poster={`/video/${clip.id}-poster.jpg`}
-              data-src={`/video/${clip.id}.mp4`}
+              data-media-id={k.id}
+              poster={klipPoster(k)}
+              data-src={klipSrc(k)}
               muted
               loop
               playsinline
               preload="none"
-              aria-label={`${clip.title}: ${clip.text}`}></video>
+              aria-label={`${k.baslik}: ${k.metin}`}></video>
             <figcaption class="klip__caption">
-              <span class="display klip__title">{clip.title}</span>
-              <span class="klip__text">{clip.text}</span>
+              <span class="display klip__title">{k.baslik}</span>
+              <span class="klip__text">{k.metin}</span>
             </figcaption>
           </figure>
         ))
@@ -60,29 +38,26 @@ const clips = [
 
 <script>
   import { gsap, allowMotionQuery, prefersReducedMotion } from '../scripts/motion';
+  import { medyaHazir } from '../scripts/media';
 
   const section = document.querySelector<HTMLElement>('.mutfak');
 
   if (section) {
     const figures = [...section.querySelectorAll<HTMLElement>('[data-klip]')];
 
-    // Kaynak yalnız görünüşe yaklaşınca atanır; sayfa açılışında video indirilmez.
-    const attach = (video: HTMLVideoElement) => {
-      if (video.dataset.ready) return;
-      const src = video.dataset.src;
-      if (!src) return;
-      video.src = src;
-      video.dataset.ready = 'true';
+    const bagla = (video: HTMLVideoElement) => {
+      if (video.src || !video.dataset.src) return;
+      video.src = video.dataset.src;
     };
 
-    const player = new IntersectionObserver(
+    const oynatici = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           const video = entry.target.querySelector<HTMLVideoElement>('video');
           if (!video) return;
           if (entry.isIntersecting) {
-            attach(video);
-            if (!prefersReducedMotion()) video.play().catch(() => {});
+            bagla(video);
+            if (!prefersReducedMotion()) void video.play().catch(() => {});
           } else {
             video.pause();
           }
@@ -90,14 +65,14 @@ const clips = [
       },
       { threshold: 0.35, rootMargin: '200px 0px' }
     );
-    figures.forEach((figure) => player.observe(figure));
+    // Yönetim panelinden adres geldiyse önce onu uygula, sonra izlemeye başla
+    medyaHazir.finally(() => figures.forEach((figure) => oynatici.observe(figure)));
 
     document.addEventListener('visibilitychange', () => {
       if (!document.hidden) return;
       figures.forEach((f) => f.querySelector('video')?.pause());
     });
 
-    // Hareket azaltma açıkken poster durur, kullanıcı isterse kendisi oynatır.
     if (prefersReducedMotion()) {
       figures.forEach((f) => {
         const video = f.querySelector('video');
@@ -206,6 +181,10 @@ const clips = [
 
     .klip--genis .klip__video {
       aspect-ratio: 21 / 9;
+    }
+
+    .klip--yari {
+      grid-column: span 6;
     }
   }
 </style>

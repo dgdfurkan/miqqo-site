@@ -52,6 +52,7 @@ export const menu: MenuCategory[] = [
         ingredients: 'Kırmızı mercimek, soğan, kemik suyu, tereyağı, tuz',
         kcal: '~220',
         allergens: glutenSut,
+        image: 'mercimek',
       },
       {
         id: 'iskembe',
@@ -60,6 +61,7 @@ export const menu: MenuCategory[] = [
         ingredients: 'İşkembe, terbiye, kemik suyu, tereyağı, tuz; yanında sarımsak ve sirke',
         kcal: '~280',
         allergens: glutenSut,
+        image: 'iskembe',
         tags: ['populer'],
       },
       {
@@ -94,6 +96,7 @@ export const menu: MenuCategory[] = [
         ingredients: 'Kelle paça eti, terbiye, kemik suyu, tereyağı, tuz; yanında sarımsak ve sirke',
         kcal: '~330',
         allergens: glutenSut,
+        image: 'kelle-paca',
       },
       {
         id: 'ayak-paca',

@@ -1,0 +1,188 @@
+---
+import { Picture } from 'astro:assets';
+import { heroKlipleri, klip, klipPoster, klipSrc } from '../data/media';
+import heroStill from '../assets/food/hero-ocak.jpg';
+
+// Hero'da klipler sırayla döner. İki video üst üste duruyor: biri oynarken diğeri
+// sıradakini yüklüyor, geçişte kararma olmuyor. Oran bozulmasın diye kutu sabit,
+// videolar object-fit: cover ile kırpılıyor (esnetme yok).
+const liste = heroKlipleri.map((id) => {
+  const k = klip(id);
+  return { id: k.id, src: klipSrc(k), poster: klipPoster(k) };
+});
+const ilk = liste[0];
+---
+
+<div class="hero-medya" data-hero-medya data-playlist={JSON.stringify(liste)}>
+  <Picture
+    class="hero-medya__still"
+    src={heroStill}
+    alt="Ocakta sıra sıra dizilmiş ciğer şişler, dumanı üstünde"
+    widths={[480, 720, 1000]}
+    sizes="(min-width: 1024px) 38vw, 92vw"
+    formats={['avif', 'webp']}
+    loading="eager"
+    fetchpriority="high"
+    data-media-id="hero-still"
+  />
+
+  <video
+    class="hero-medya__video is-active"
+    data-hero-video
+    data-media-id={ilk.id}
+    poster={ilk.poster}
+    muted
+    playsinline
+    preload="none"
+    tabindex="-1"
+    aria-hidden="true"></video>
+  <video class="hero-medya__video" data-hero-video muted playsinline preload="none" tabindex="-1" aria-hidden="true"
+  ></video>
+</div>
+
+<script>
+  import { prefersReducedMotion } from '../scripts/motion';
+  import { medyaHazir } from '../scripts/media';
+
+  const box = document.querySelector<HTMLElement>('[data-hero-medya]');
+  const videos = box ? [...box.querySelectorAll<HTMLVideoElement>('[data-hero-video]')] : [];
+
+  type Parca = { id: string; src: string; poster: string };
+
+  if (box && videos.length === 2) {
+    const oku = (): Parca[] => {
+      try {
+        return JSON.parse(box.dataset.playlist ?? '[]');
+      } catch {
+        return [];
+      }
+    };
+
+    const yavasBaglanti = () => {
+      const n = (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
+      return !!n?.saveData || (!!n?.effectiveType && /2g/.test(n.effectiveType));
+    };
+
+    // Hareket azaltma veya veri tasarrufu: video hiç yüklenmez, hero fotoğrafı kalır.
+    if (!prefersReducedMotion() && !yavasBaglanti()) {
+      let liste = oku();
+      let sira = 0;
+      let aktif = 0;
+      let calisiyor = false;
+
+      const yukle = (video: HTMLVideoElement, parca: Parca) => {
+        video.dataset.mediaId = parca.id;
+        video.poster = parca.poster;
+        video.src = parca.src;
+        video.load();
+      };
+
+      const ilerle = () => {
+        liste = oku();
+        if (liste.length < 2) {
+          videos[aktif].currentTime = 0;
+          void videos[aktif].play();
+          return;
+        }
+        const sonraki = (aktif + 1) % 2;
+        sira = (sira + 1) % liste.length;
+        const hedef = videos[sonraki];
+        if (hedef.dataset.mediaId !== liste[sira].id) yukle(hedef, liste[sira]);
+        hedef.currentTime = 0;
+        void hedef.play();
+        hedef.classList.add('is-active');
+        videos[aktif].classList.remove('is-active');
+        const eski = videos[aktif];
+        aktif = sonraki;
+        // Geçiş bittikten sonra boşta kalan elemana bir sonraki klip yüklenir
+        window.setTimeout(() => {
+          eski.pause();
+          yukle(eski, liste[(sira + 1) % liste.length]);
+        }, 700);
+      };
+
+      const basla = () => {
+        if (calisiyor || !liste.length) return;
+        calisiyor = true;
+        yukle(videos[0], liste[0]);
+        if (liste[1]) yukle(videos[1], liste[1]);
+        void videos[0].play().catch(() => {
+          // Otomatik oynatma engellendiyse fotoğraf görünmeye devam eder
+          box.dataset.videoKapali = 'true';
+        });
+      };
+
+      videos.forEach((video) => {
+        video.addEventListener('ended', ilerle);
+        video.addEventListener('playing', () => {
+          box.dataset.videoAcik = 'true';
+        });
+      });
+
+      // Yönetim panelinden gelen adresler varsa liste güncellenmiş olur
+      medyaHazir.then(() => {
+        liste = oku();
+      });
+
+      const gorunur = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              basla();
+              if (calisiyor) void videos[aktif].play().catch(() => {});
+            } else {
+              videos.forEach((v) => v.pause());
+            }
+          });
+        },
+        { threshold: 0.15 }
+      );
+      gorunur.observe(box);
+
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) videos.forEach((v) => v.pause());
+        else if (calisiyor) void videos[aktif].play().catch(() => {});
+      });
+    }
+  }
+</script>
+
+<style>
+  .hero-medya {
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+    height: 100%;
+    border-radius: var(--radius-media);
+    background-color: var(--color-is);
+  }
+
+  .hero-medya :global(.hero-medya__still) {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 50% 50%;
+  }
+
+  .hero-medya :global(picture) {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* Videolar fotoğrafın üstünde, oran korunarak kırpılır */
+  .hero-medya__video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0;
+    transition: opacity 0.7s var(--ease-soft);
+  }
+
+  .hero-medya[data-video-acik='true'] .hero-medya__video.is-active {
+    opacity: 1;
+  }
+</style>

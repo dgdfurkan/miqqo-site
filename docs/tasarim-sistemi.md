@@ -61,6 +61,10 @@ Kart kutusu varsayılan değil. Gruplama boşluk ve tek çizgiyle yapılır. Gö
 
 **Grid içinde fotoğraf**: grid hücresinde `aspect-ratio` ile `width: auto` birlikte çözülmüyor, fotoğraf şeride dönüyor. Masaüstü panellerinde genişliği kolona bırak, yüksekliği `clamp` ile sabitle, `object-fit: cover` kırpsın.
 
+**JS ile üretilen eleman kapsamlı stil almıyor**: Astro, bileşenin `<style>` bloğundaki seçicilere `data-astro-cid-*` niteliği ekliyor. `document.createElement` ile üretilen eleman bu niteliği taşımadığı için kural hiç uygulanmıyor (duyuru panosundaki ilerleme çubukları bu yüzden 0 px yükseklikte kalmıştı). Çözüm: elemanı işaretlemede üret, JS yalnız durumunu değiştirsin. Zorunlu hallerde stil `:global()` ile yazılır.
+
+**Astro `<Picture>` ve `<template>`**: `<template>` içindeki görseller klonlanana kadar indirilmiyor. Günün panosu ve menü detayı bu sayede bütün adayları sayfada tutup yalnız gösterileni yüklüyor.
+
 ## İmza öğesi: şiş
 
 Logonun taşıyıcı motifi olan şiş (halka sap, ince gövde, sivri uç) sitenin tek cesur öğesi.

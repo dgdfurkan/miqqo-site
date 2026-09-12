@@ -1,35 +1,62 @@
 ---
-import { Picture } from 'astro:assets';
+import { Image, Picture } from 'astro:assets';
 import Icon from './Icon.astro';
-import { findItem, portionPrice, type MenuItem } from '../data/menu';
+import wordmark from '../assets/brand/miqqo-wordmark.png';
+import { klipler, klipPoster, klipSrc, panoGorselleri } from '../data/media';
+import { findItem } from '../data/menu';
 import { productImage, hasProductImage } from '../lib/images';
-import { formatPrice, site } from '../data/site';
+import { site } from '../data/site';
 
-// Panoya girebilecek ürünler. Günün tohumu bunların içinden seçip sıralar,
-// seçilmeyenler klonlanırken DOM'a hiç girmiyor, yani görselleri indirilmiyor.
-const aday = ['ciger-sis', 'adana-kebap', 'karisik-izgara', 'kuzu-pirzola', 'special-sis', 'kusbasili-pide', 'iskembe', 'kunefe'];
-const items = aday
-  .map((id) => findItem(id))
-  .filter((item): item is MenuItem & { image: string } => !!item?.image && hasProductImage(item.image));
+// Günün panosu: Instagram hikâyesi gibi dikey kartlar, otomatik geçiş, fiyat yok.
+// Kartların hepsi <template> içinde duruyor; günün tohumu seçiyor, seçilmeyenler
+// klonlanırken siliniyor, yani medyaları hiç indirilmiyor.
 
-const klipler = ['fire-grill', 'ocakta-pide', 'table-show-solen'];
+const reklamMetni: Record<string, string> = {
+  'ciger-sis': 'Günlük taze ciğer, közün üstünde.',
+  'adana-kebap': 'Elde çekilmiş Adana, acısı yerinde.',
+  'karisik-izgara': 'Hepsinden biraz, tek tepside.',
+  'kuzu-pirzola': 'Kuzu pirzola, ocaktan sofraya.',
+  'special-sis': 'Yarısı et, yarısı ciğer.',
+  'kusbasili-pide': 'Odun ateşinde kuşbaşılı pide.',
+  iskembe: 'Sabahın çorbası, kemik suyundan.',
+  kunefe: 'Üstü fıstıklı, içi peynirli.',
+  'kiremitte-kofte': 'Kiremitte köfte, kaşarı üstünde.',
+  'yaprak-ciger': 'Yaprak ciğer, tereyağında.',
+  'tavuk-kanat': 'Tavuk kanat, közde kızarmış.',
+  'sac-kavurma': 'Saçta kavurma, köz biberli.',
+};
+
+const gorselKartlari = panoGorselleri
+  .filter((slug) => hasProductImage(slug))
+  .map((slug) => ({ slug, ad: findItem(slug)?.name ?? slug, metin: reklamMetni[slug] ?? 'Bugün sofrada.' }));
 ---
 
-<dialog class="duyuru" aria-labelledby="duyuru-baslik" data-duyuru>
-  <div class="duyuru__panel" data-duyuru-panel>
-    <button class="duyuru__close" type="button" aria-label="Panoyu kapat" data-duyuru-close>
-      <Icon name="x-bold" size={20} />
-    </button>
+<dialog class="pano" aria-label="Günün panosu" data-pano>
+  <div class="pano__panel" tabindex="-1" data-pano-panel>
+    {/* Çubuklar burada, işaretlemede duruyor: JS ile üretilen eleman Astro'nun
+        kapsamlı stilini almıyor ve yükseklik 0 kalıyor. */}
+    <div class="pano__bars" aria-hidden="true" data-pano-bars>
+      {[0, 1, 2, 3, 4].map(() => (
+        <span class="pano__bar">
+          <i />
+        </span>
+      ))}
+    </div>
 
-    <header class="duyuru__head">
-      <p class="duyuru__eyebrow">Bugünün panosu</p>
-      <h2 id="duyuru-baslik" class="display duyuru__title" data-duyuru-title>Sofrada ne var?</h2>
-      <p class="duyuru__lead" data-duyuru-lead>Her gün değişen öneriler.</p>
+    <header class="pano__head">
+      <Image src={wordmark} alt="Ciğerci Miqqo" width={96} densities={[1, 2]} class="pano__logo" />
+      <span class="pano__gun" data-pano-gun></span>
+      <button class="pano__close" type="button" aria-label="Panoyu kapat" data-pano-close>
+        <Icon name="x-bold" size={18} />
+      </button>
     </header>
 
-    <div class="duyuru__stage" data-duyuru-stage></div>
+    <div class="pano__stage" data-pano-stage></div>
 
-    <footer class="duyuru__foot">
+    <button class="pano__zone pano__zone--geri" type="button" aria-label="Önceki" data-pano-geri></button>
+    <button class="pano__zone pano__zone--ileri" type="button" aria-label="Sonraki" data-pano-ileri></button>
+
+    <footer class="pano__foot">
       <a class="btn btn-koz" href="/menu">Menüyü gör</a>
       <a class="btn btn-line" href={site.phone.href} aria-label={`Telefonla ara: ${site.phone.display}`}>
         <Icon name="phone-bold" size={18} />
@@ -39,43 +66,45 @@ const klipler = ['fire-grill', 'ocakta-pide', 'table-show-solen'];
   </div>
 </dialog>
 
-<template data-duyuru-tpl>
+<template data-pano-tpl>
   {
-    items.map((item) => (
-      <figure class="pano" data-duyuru-card>
-        <div class="pano__photo">
-          <Picture
-            src={productImage(item.image)}
-            alt={item.name}
-            widths={[420, 640, 900]}
-            sizes="(min-width: 768px) 40vw, 88vw"
-            formats={['webp']}
-            loading="lazy"
-          />
-        </div>
-        <figcaption class="pano__meta">
-          <span class="display pano__name">{item.name}</span>
-          <span class="display pano__price">{formatPrice(portionPrice(item)!)}</span>
-        </figcaption>
-      </figure>
-    ))
-  }
-  {
-    klipler.map((klip) => (
-      <figure class="pano pano--klip" data-duyuru-klip>
+    klipler.map((k) => (
+      <article class="kart kart--video" data-pano-card data-tip="video">
         <video
-          class="pano__video"
-          poster={`/video/${klip}-poster.jpg`}
-          data-src={`/video/${klip}.mp4`}
+          class="kart__medya"
+          data-media-id={k.id}
+          data-src={klipSrc(k)}
+          poster={klipPoster(k)}
           muted
           loop
           playsinline
           preload="none"
           aria-hidden="true"></video>
-        <figcaption class="pano__meta">
-          <span class="display pano__name">Ocak başında</span>
-        </figcaption>
-      </figure>
+        <div class="kart__yazi">
+          <p class="display kart__baslik">{k.baslik}</p>
+          <p class="kart__metin">{k.metin}</p>
+        </div>
+      </article>
+    ))
+  }
+  {
+    gorselKartlari.map((kart) => (
+      <article class="kart" data-pano-card data-tip="gorsel">
+        <Picture
+          class="kart__medya"
+          src={productImage(kart.slug)}
+          alt={kart.ad}
+          widths={[420, 640, 900]}
+          sizes="(min-width: 640px) 420px, 92vw"
+          formats={['webp']}
+          loading="lazy"
+          data-media-id={`urun-${kart.slug}`}
+        />
+        <div class="kart__yazi">
+          <p class="display kart__baslik">{kart.ad}</p>
+          <p class="kart__metin">{kart.metin}</p>
+        </div>
+      </article>
     ))
   }
 </template>
@@ -84,14 +113,17 @@ const klipler = ['fire-grill', 'ocakta-pide', 'table-show-solen'];
   import { gsap, lockScroll, prefersReducedMotion } from '../scripts/motion';
 
   const KEY = 'miqqo-duyuru';
-  const dialog = document.querySelector<HTMLDialogElement>('[data-duyuru]');
-  const template = document.querySelector<HTMLTemplateElement>('[data-duyuru-tpl]');
-  const stage = dialog?.querySelector<HTMLElement>('[data-duyuru-stage]');
-  const panel = dialog?.querySelector<HTMLElement>('[data-duyuru-panel]');
-  const titleEl = dialog?.querySelector<HTMLElement>('[data-duyuru-title]');
-  const leadEl = dialog?.querySelector<HTMLElement>('[data-duyuru-lead]');
+  const GORSEL_SURE = 3.8;
+  const VIDEO_SURE = 5.4;
 
-  if (dialog && template && stage && panel) {
+  const dialog = document.querySelector<HTMLDialogElement>('[data-pano]');
+  const template = document.querySelector<HTMLTemplateElement>('[data-pano-tpl]');
+  const stage = dialog?.querySelector<HTMLElement>('[data-pano-stage]');
+  const bars = dialog?.querySelector<HTMLElement>('[data-pano-bars]');
+  const panel = dialog?.querySelector<HTMLElement>('[data-pano-panel]');
+  const gunEl = dialog?.querySelector<HTMLElement>('[data-pano-gun]');
+
+  if (dialog && template && stage && bars && panel) {
     const gunKodu = () =>
       new Intl.DateTimeFormat('en-CA', {
         timeZone: 'Europe/Istanbul',
@@ -100,7 +132,11 @@ const klipler = ['fire-grill', 'ocakta-pide', 'table-show-solen'];
         day: '2-digit',
       }).format(new Date());
 
-    // Aynı gün herkeste aynı pano çıksın diye tohum tarihten geliyor.
+    const gunYazisi = () =>
+      new Intl.DateTimeFormat('tr-TR', { timeZone: 'Europe/Istanbul', day: 'numeric', month: 'long' }).format(
+        new Date()
+      );
+
     const tohum = (metin: string) => {
       let h = 2166136261;
       for (let i = 0; i < metin.length; i += 1) {
@@ -117,57 +153,98 @@ const klipler = ['fire-grill', 'ocakta-pide', 'table-show-solen'];
       return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
     };
 
-    const duzenler = [
-      { ad: 'tek', adet: 1, baslik: 'Bugün bunu öneriyoruz.', alt: 'Ustanın günün seçimi.' },
-      { ad: 'uclu', adet: 3, baslik: 'Bugünün üçlüsü.', alt: 'En çok sevilenlerden.' },
-      { ad: 'dortlu', adet: 4, baslik: 'Sofrada ne var?', alt: 'Dört tabak, bir sofra.' },
-      { ad: 'klipli', adet: 2, baslik: 'Ocak başından.', alt: 'Kısa bir görüntü, iki tabak.' },
-    ];
+    let kartlar: HTMLElement[] = [];
+    let sira = 0;
+    let sayac: gsap.core.Tween | null = null;
 
+    const karistir = <T,>(dizi: T[], rand: () => number) =>
+      dizi
+        .map((oge) => ({ oge, n: rand() }))
+        .sort((a, b) => a.n - b.n)
+        .map((x) => x.oge);
+
+    // Günün kartları: video ile başlar, video ve fotoğraf sırayla gelir.
     const kur = (gun: string) => {
       const rand = zar(tohum(gun));
-      const duzen = duzenler[Math.floor(rand() * duzenler.length)];
       const parca = template.content.cloneNode(true) as DocumentFragment;
-      const kartlar = [...parca.querySelectorAll<HTMLElement>('[data-duyuru-card]')];
-      const klipler = [...parca.querySelectorAll<HTMLElement>('[data-duyuru-klip]')];
+      const videolar = karistir([...parca.querySelectorAll<HTMLElement>('[data-tip="video"]')], rand);
+      const gorseller = karistir([...parca.querySelectorAll<HTMLElement>('[data-tip="gorsel"]')], rand);
+      const secilen = [videolar[0], gorseller[0], videolar[1], gorseller[1], gorseller[2]].filter(Boolean);
 
-      const karisik = kartlar
-        .map((kart) => ({ kart, n: rand() }))
-        .sort((a, b) => a.n - b.n)
-        .map((x) => x.kart);
-      const kalan = new Set(karisik.slice(0, duzen.adet));
-      kartlar.forEach((kart) => {
-        if (!kalan.has(kart)) kart.remove();
+      [...videolar, ...gorseller].forEach((kart) => {
+        if (!secilen.includes(kart)) kart.remove();
+      });
+      secilen.forEach((kart) => stage.appendChild(kart));
+
+      kartlar = secilen;
+      [...bars.children].forEach((bar, i) => {
+        (bar as HTMLElement).hidden = i >= kartlar.length;
+        const dolu = bar.firstElementChild as HTMLElement | null;
+        if (dolu) gsap.set(dolu, { scaleX: 0 });
+      });
+      if (gunEl) gunEl.textContent = gunYazisi();
+    };
+
+    const videoyuHazirla = (kart?: HTMLElement) => {
+      const video = kart?.querySelector<HTMLVideoElement>('video');
+      if (!video || video.src || !video.dataset.src) return;
+      video.src = video.dataset.src;
+    };
+
+    const durdur = () => {
+      sayac?.kill();
+      sayac = null;
+      kartlar.forEach((kart) => kart.querySelector('video')?.pause());
+    };
+
+    const goster = (index: number) => {
+      if (!kartlar.length) return;
+      if (index >= kartlar.length) return kapat();
+      sira = Math.max(0, index);
+      durdur();
+
+      kartlar.forEach((kart, i) => kart.classList.toggle('is-active', i === sira));
+      [...bars.children].forEach((bar, i) => {
+        const dolu = bar.firstElementChild as HTMLElement;
+        gsap.killTweensOf(dolu);
+        gsap.set(dolu, { scaleX: i < sira ? 1 : 0 });
       });
 
-      const secilenKlip = duzen.ad === 'klipli' ? klipler[Math.floor(rand() * klipler.length)] : null;
-      klipler.forEach((klip) => {
-        if (klip !== secilenKlip) klip.remove();
-      });
+      const kart = kartlar[sira];
+      const video = kart.querySelector<HTMLVideoElement>('video');
+      videoyuHazirla(kart);
+      videoyuHazirla(kartlar[sira + 1]);
+      if (video) void video.play().catch(() => {});
 
-      stage.dataset.duzen = duzen.ad;
-      if (titleEl) titleEl.textContent = duzen.baslik;
-      if (leadEl) leadEl.textContent = duzen.alt;
-      stage.replaceChildren(parca);
+      const sure = kart.dataset.tip === 'video' ? VIDEO_SURE : GORSEL_SURE;
+      const dolu = bars.children[sira]?.firstElementChild as HTMLElement | undefined;
+      if (!dolu) return;
 
-      const video = stage.querySelector<HTMLVideoElement>('video');
-      if (video?.dataset.src) {
-        video.src = video.dataset.src;
-        if (!prefersReducedMotion()) video.play().catch(() => {});
-        else video.controls = true;
+      if (prefersReducedMotion()) {
+        gsap.set(dolu, { scaleX: 1 });
+        return;
       }
+      sayac = gsap.fromTo(
+        dolu,
+        { scaleX: 0 },
+        { scaleX: 1, duration: sure, ease: 'none', onComplete: () => goster(sira + 1) }
+      );
     };
 
     const kapat = () => {
-      stage.querySelector('video')?.pause();
+      durdur();
       const bitir = () => {
         dialog.close();
         lockScroll(false);
         stage.replaceChildren();
+        [...bars.children].forEach((bar) => {
+          const dolu = bar.firstElementChild as HTMLElement | null;
+          if (dolu) gsap.set(dolu, { scaleX: 0 });
+        });
         gsap.set(panel, { clearProps: 'all' });
       };
       if (prefersReducedMotion()) return bitir();
-      gsap.to(panel, { autoAlpha: 0, y: 18, duration: 0.3, ease: 'power2.in', onComplete: bitir });
+      gsap.to(panel, { autoAlpha: 0, scale: 0.98, duration: 0.28, ease: 'power2.in', onComplete: bitir });
     };
 
     const ac = (zorla = false) => {
@@ -179,24 +256,27 @@ const klipler = ['fire-grill', 'ocakta-pide', 'table-show-solen'];
       }
       kur(gun);
       dialog.showModal();
+      // Odak panele alınır; yoksa tarayıcı kapatma düğmesine odaklanıp ilk karede
+      // turuncu odak halkası gösteriyor.
+      panel.focus({ preventScroll: true });
       lockScroll(true);
       try {
         localStorage.setItem(KEY, gun);
       } catch {}
 
-      if (prefersReducedMotion()) return;
+      if (prefersReducedMotion()) {
+        goster(0);
+        return;
+      }
       gsap
-        .timeline({ defaults: { ease: 'expo.out' } })
-        .fromTo(panel, { autoAlpha: 0, y: 34, scale: 0.97 }, { autoAlpha: 1, y: 0, scale: 1, duration: 0.7 })
-        .fromTo(
-          stage.querySelectorAll('.pano'),
-          { autoAlpha: 0, y: 26, scale: 0.96 },
-          { autoAlpha: 1, y: 0, scale: 1, duration: 0.7, stagger: 0.09 },
-          0.18
-        );
+        .timeline()
+        .fromTo(panel, { autoAlpha: 0, y: 28, scale: 0.97 }, { autoAlpha: 1, y: 0, scale: 1, duration: 0.6, ease: 'expo.out' })
+        .add(() => goster(0), 0.25);
     };
 
-    dialog.querySelector('[data-duyuru-close]')?.addEventListener('click', kapat);
+    dialog.querySelector('[data-pano-close]')?.addEventListener('click', kapat);
+    dialog.querySelector('[data-pano-ileri]')?.addEventListener('click', () => goster(sira + 1));
+    dialog.querySelector('[data-pano-geri]')?.addEventListener('click', () => goster(Math.max(sira - 1, 0)));
     dialog.addEventListener('cancel', (event) => {
       event.preventDefault();
       kapat();
@@ -205,8 +285,30 @@ const klipler = ['fire-grill', 'ocakta-pide', 'table-show-solen'];
       if (event.target === dialog) kapat();
     });
     dialog.querySelectorAll('a[href]').forEach((link) => link.addEventListener('click', kapat));
+    dialog.addEventListener('keydown', (event) => {
+      if (event.key === 'ArrowRight') goster(sira + 1);
+      if (event.key === 'ArrowLeft') goster(Math.max(sira - 1, 0));
+    });
 
-    // Footer'daki bağlantı panoyu tekrar açar
+    // Dokunmatikte kaydırarak geçiş
+    let basla = 0;
+    panel.addEventListener('touchstart', (e) => (basla = e.changedTouches[0].clientX), { passive: true });
+    panel.addEventListener(
+      'touchend',
+      (e) => {
+        const fark = e.changedTouches[0].clientX - basla;
+        if (Math.abs(fark) < 45) return;
+        goster(fark < 0 ? sira + 1 : Math.max(sira - 1, 0));
+      },
+      { passive: true }
+    );
+
+    document.addEventListener('visibilitychange', () => {
+      if (!dialog.open) return;
+      if (document.hidden) durdur();
+      else goster(sira);
+    });
+
     document.querySelectorAll('[data-duyuru-open]').forEach((el) =>
       el.addEventListener('click', (event) => {
         event.preventDefault();
@@ -214,13 +316,12 @@ const klipler = ['fire-grill', 'ocakta-pide', 'table-show-solen'];
       })
     );
 
-    // Hero girişini kesmesin diye kısa bir gecikme
-    window.setTimeout(() => ac(false), 900);
+    window.setTimeout(() => ac(false), 1100);
   }
 </script>
 
 <style>
-  .duyuru {
+  .pano {
     width: 100%;
     max-width: none;
     max-height: none;
@@ -231,154 +332,174 @@ const klipler = ['fire-grill', 'ocakta-pide', 'table-show-solen'];
     color: var(--color-lavas);
   }
 
-  .duyuru[open] {
+  .pano[open] {
     position: fixed;
     inset: 0;
     display: grid;
     place-items: center;
     height: 100dvh;
-    padding: clamp(12px, 3vw, 40px);
+    padding: clamp(10px, 2vw, 28px);
   }
 
-  .duyuru__panel {
+  /* Hikâye paneli: dikey, telefon oranında */
+  .pano__panel {
     position: relative;
-    width: min(100%, 62rem);
-    max-height: 92dvh;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    padding: clamp(22px, 3.4vw, 40px);
+    display: grid;
+    grid-template-rows: auto auto 1fr auto;
+    width: min(94vw, 26rem);
+    height: min(88dvh, 46rem);
+    overflow: hidden;
     border-radius: var(--radius-sheet);
-    background:
-      radial-gradient(90% 70% at 12% 0%, rgb(252 72 36 / 0.16), transparent 68%),
-      var(--color-is);
+    background-color: #0b0c0a;
     box-shadow:
-      inset 0 0 0 1px rgb(241 232 216 / 0.12),
-      0 30px 90px rgb(0 0 0 / 0.55);
+      inset 0 0 0 1px rgb(241 232 216 / 0.14),
+      0 30px 90px rgb(0 0 0 / 0.6);
   }
 
-  .duyuru__close {
+  .pano__panel:focus-visible {
+    outline: none;
+  }
+
+  .pano__bars {
+    z-index: 3;
+    display: flex;
+    gap: 5px;
+    padding: 0.8rem 0.9rem 0.1rem;
+  }
+
+  .pano__bar {
+    position: relative;
+    flex: 1;
+    height: 4px;
+    overflow: hidden;
+    border-radius: 999px;
+    background-color: rgb(241 232 216 / 0.32);
+  }
+
+  .pano__bar i {
     position: absolute;
-    top: 0.9rem;
-    right: 0.9rem;
-    z-index: 2;
+    inset: 0;
+    display: block;
+    background-color: var(--color-lavas);
+    transform: scaleX(0);
+    transform-origin: left center;
+  }
+
+  .pano__head {
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.6rem 0.8rem 0.2rem;
+  }
+
+  .pano__head :global(.pano__logo) {
+    width: 96px;
+    height: auto;
+  }
+
+  .pano__gun {
+    color: rgb(241 232 216 / 0.65);
+    font-size: 0.75rem;
+  }
+
+  .pano__close {
     display: grid;
     place-items: center;
-    width: 2.5rem;
-    height: 2.5rem;
+    width: 2rem;
+    height: 2rem;
+    margin-left: auto;
     border-radius: 9999px;
-    background-color: rgb(15 16 14 / 0.6);
+    background-color: rgb(241 232 216 / 0.12);
     color: var(--color-lavas);
   }
 
-  .duyuru__close:hover {
-    background-color: rgb(15 16 14 / 0.85);
-  }
-
-  .duyuru__eyebrow {
-    color: var(--color-koz);
-    font-size: 0.8125rem;
-    font-weight: 600;
-  }
-
-  .duyuru__title {
-    margin-top: 0.3rem;
-    font-size: clamp(1.9rem, 4.4vw, 2.9rem);
-  }
-
-  .duyuru__lead {
-    margin-top: 0.4rem;
-    color: var(--color-kul);
-  }
-
-  .duyuru__stage {
-    display: grid;
-    gap: clamp(10px, 1.4vw, 16px);
-    margin-top: clamp(18px, 2.4vw, 28px);
-  }
-
-  .duyuru__stage[data-duzen='uclu'],
-  .duyuru__stage[data-duzen='klipli'] {
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
-  }
-
-  .duyuru__stage[data-duzen='dortlu'] {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .pano {
+  .pano__stage {
     position: relative;
+    grid-row: 3;
     overflow: hidden;
-    border-radius: var(--radius-media);
-    background-color: var(--color-komur);
   }
 
-  .pano :global(picture),
-  .pano :global(img),
-  .pano__video {
+  .kart {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.45s var(--ease-soft);
+  }
+
+  .kart.is-active {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .kart :global(picture),
+  .kart :global(.kart__medya) {
     display: block;
     width: 100%;
     height: 100%;
   }
 
-  .pano :global(img),
-  .pano__video {
-    aspect-ratio: 4 / 3;
+  /* Oran korunur, kutuya sığmayan kısım kırpılır */
+  .kart :global(img),
+  .kart video {
+    width: 100%;
+    height: 100%;
     object-fit: cover;
   }
 
-  .duyuru__stage[data-duzen='tek'] .pano :global(img) {
-    aspect-ratio: 16 / 10;
-  }
-
-  .pano__meta {
+  .kart__yazi {
     position: absolute;
     inset: auto 0 0;
+    display: grid;
+    gap: 0.2rem;
+    padding: clamp(16px, 4vw, 24px);
+    background: linear-gradient(0deg, rgb(11 12 10 / 0.95), rgb(11 12 10 / 0.45) 55%, transparent);
+  }
+
+  .kart__baslik {
+    font-size: clamp(1.6rem, 6vw, 2.2rem);
+    line-height: 1;
+  }
+
+  .kart__metin {
+    color: rgb(241 232 216 / 0.82);
+    font-size: 0.95rem;
+  }
+
+  /* Kartın sağına ve soluna tıklayınca hikâye ilerler */
+  .pano__zone {
+    position: absolute;
+    top: 4.2rem;
+    bottom: 5.5rem;
+    z-index: 2;
+    width: 32%;
+    background: none;
+    cursor: pointer;
+  }
+
+  .pano__zone--geri {
+    left: 0;
+  }
+
+  .pano__zone--ileri {
+    right: 0;
+    width: 46%;
+  }
+
+  .pano__foot {
+    position: relative;
+    z-index: 3;
     display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    justify-content: space-between;
     gap: 0.5rem;
-    padding: clamp(12px, 1.8vw, 20px);
-    background: linear-gradient(0deg, rgb(15 16 14 / 0.92), rgb(15 16 14 / 0.35) 70%, transparent);
+    padding: 0.8rem;
+    background: linear-gradient(0deg, #0b0c0a, rgb(11 12 10 / 0.8));
   }
 
-  .pano__name {
-    font-size: clamp(1.1rem, 1.8vw, 1.6rem);
-    line-height: 1;
-  }
-
-  .pano__price {
-    color: var(--color-koz);
-    font-size: clamp(1.05rem, 1.6vw, 1.45rem);
-    line-height: 1;
-  }
-
-  .duyuru__foot {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.75rem;
-    margin-top: clamp(18px, 2.4vw, 28px);
-  }
-
-  @media (max-width: 479px) {
-    .duyuru__foot .btn {
-      flex: 1 1 100%;
-    }
-  }
-
-  /* Geniş ekranda kartlar tek sıraya geçer: 2x2 düzende panelin altı ekranın dışında kalıyordu. */
-  @media (min-width: 900px) {
-    .duyuru__stage[data-duzen='dortlu'] {
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-    }
-
-    .duyuru__stage[data-duzen='uclu'] {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-
-    .duyuru__stage[data-duzen='dortlu'] .pano :global(img),
-    .duyuru__stage[data-duzen='uclu'] .pano :global(img) {
-      aspect-ratio: 3 / 4;
-    }
+  .pano__foot .btn {
+    flex: 1;
+    min-height: 2.9rem;
+    padding-inline: 0.9rem;
+    font-size: 0.9rem;
   }
 </style>
