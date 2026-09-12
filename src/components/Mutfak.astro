@@ -1,0 +1,211 @@
+---
+// Kısa sessiz mutfak görüntüleri. Dosyalar public/video altında, ffmpeg ile 720p,
+// sessiz ve faststart olarak kodlandı. Kaynak yalnız görünüşe girince atanır.
+const clips = [
+  {
+    id: 'fire-grill',
+    title: 'Köz başında',
+    text: 'Ciğer şiş, ateşin üstünde çevrilir.',
+    size: 'buyuk',
+  },
+  {
+    id: 'ocakta-pide',
+    title: 'Odun fırınında',
+    text: 'Pide, fırının ağzında pişer.',
+    size: 'kucuk',
+  },
+  {
+    id: 'usta-mutfakta-yemek-hazirliyor-1',
+    title: 'Ustanın elinden',
+    text: 'Tabak, mutfakta kurulur.',
+    size: 'kucuk',
+  },
+  {
+    id: 'table-show-solen',
+    title: 'Sofra kuruldu',
+    text: 'Mezeler, salata ve sıcak lavaş.',
+    size: 'genis',
+  },
+];
+---
+
+<section class="mutfak" id="mutfak" aria-labelledby="mutfak-baslik">
+  <div class="container-site">
+    <h2 id="mutfak-baslik" class="display mutfak__title">Ocak başında</h2>
+    <p class="mutfak__lead">Mutfaktan kısa görüntüler. Ses yok, sadece ateş ve tabak.</p>
+
+    <div class="mutfak__grid">
+      {
+        clips.map((clip) => (
+          <figure class:list={['klip', `klip--${clip.size}`]} data-klip>
+            <video
+              class="klip__video"
+              poster={`/video/${clip.id}-poster.jpg`}
+              data-src={`/video/${clip.id}.mp4`}
+              muted
+              loop
+              playsinline
+              preload="none"
+              aria-label={`${clip.title}: ${clip.text}`}></video>
+            <figcaption class="klip__caption">
+              <span class="display klip__title">{clip.title}</span>
+              <span class="klip__text">{clip.text}</span>
+            </figcaption>
+          </figure>
+        ))
+      }
+    </div>
+  </div>
+</section>
+
+<script>
+  import { gsap, allowMotionQuery, prefersReducedMotion } from '../scripts/motion';
+
+  const section = document.querySelector<HTMLElement>('.mutfak');
+
+  if (section) {
+    const figures = [...section.querySelectorAll<HTMLElement>('[data-klip]')];
+
+    // Kaynak yalnız görünüşe yaklaşınca atanır; sayfa açılışında video indirilmez.
+    const attach = (video: HTMLVideoElement) => {
+      if (video.dataset.ready) return;
+      const src = video.dataset.src;
+      if (!src) return;
+      video.src = src;
+      video.dataset.ready = 'true';
+    };
+
+    const player = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          const video = entry.target.querySelector<HTMLVideoElement>('video');
+          if (!video) return;
+          if (entry.isIntersecting) {
+            attach(video);
+            if (!prefersReducedMotion()) video.play().catch(() => {});
+          } else {
+            video.pause();
+          }
+        });
+      },
+      { threshold: 0.35, rootMargin: '200px 0px' }
+    );
+    figures.forEach((figure) => player.observe(figure));
+
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) return;
+      figures.forEach((f) => f.querySelector('video')?.pause());
+    });
+
+    // Hareket azaltma açıkken poster durur, kullanıcı isterse kendisi oynatır.
+    if (prefersReducedMotion()) {
+      figures.forEach((f) => {
+        const video = f.querySelector('video');
+        if (video) video.controls = true;
+      });
+    }
+
+    gsap.matchMedia().add(allowMotionQuery, () => {
+      gsap.fromTo(
+        figures,
+        { autoAlpha: 0, y: 28 },
+        {
+          autoAlpha: 1,
+          y: 0,
+          duration: 0.9,
+          stagger: 0.08,
+          ease: 'expo.out',
+          scrollTrigger: { trigger: section, start: 'top 78%' },
+        }
+      );
+    });
+  }
+</script>
+
+<style>
+  .mutfak {
+    padding-block: clamp(56px, 9vw, 120px);
+  }
+
+  .mutfak__title {
+    font-size: clamp(2.75rem, 6.5vw, 6rem);
+  }
+
+  .mutfak__lead {
+    max-width: 34ch;
+    margin-top: 1rem;
+    color: rgb(241 232 216 / 0.8);
+  }
+
+  .mutfak__grid {
+    display: grid;
+    gap: clamp(12px, 1.6vw, 20px);
+    margin-top: clamp(28px, 4vw, 48px);
+  }
+
+  .klip {
+    position: relative;
+    overflow: hidden;
+    border-radius: var(--radius-media);
+    background-color: var(--color-is);
+  }
+
+  .motion .mutfak__grid > .klip {
+    visibility: hidden;
+  }
+
+  .klip__video {
+    display: block;
+    width: 100%;
+    height: 100%;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    background-color: var(--color-is);
+  }
+
+  .klip__caption {
+    position: absolute;
+    inset: auto 0 0;
+    display: grid;
+    gap: 0.15rem;
+    padding: clamp(14px, 2vw, 22px);
+    background: linear-gradient(0deg, rgb(15 16 14 / 0.92), rgb(15 16 14 / 0.45) 60%, transparent);
+  }
+
+  .klip__title {
+    font-size: clamp(1.35rem, 2vw, 1.8rem);
+    line-height: 1;
+  }
+
+  .klip__text {
+    color: rgb(241 232 216 / 0.78);
+    font-size: 0.9rem;
+  }
+
+  @media (min-width: 768px) {
+    .mutfak__grid {
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+    }
+
+    .klip--buyuk {
+      grid-column: span 7;
+      grid-row: span 2;
+    }
+
+    .klip--buyuk .klip__video {
+      aspect-ratio: 4 / 3;
+    }
+
+    .klip--kucuk {
+      grid-column: span 5;
+    }
+
+    .klip--genis {
+      grid-column: span 12;
+    }
+
+    .klip--genis .klip__video {
+      aspect-ratio: 21 / 9;
+    }
+  }
+</style>

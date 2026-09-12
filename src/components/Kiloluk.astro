@@ -70,7 +70,7 @@ const labels = ['500 gr', '1 kg'];
 </section>
 
 <script>
-  import { gsap, prefersReducedMotion } from '../scripts/motion';
+  import { gsap, prefersReducedMotion, allowMotionQuery } from '../scripts/motion';
 
   const section = document.querySelector<HTMLElement>('[data-kilo]');
 
@@ -113,6 +113,22 @@ const labels = ['500 gr', '1 kg'];
     section.querySelectorAll<HTMLElement>('[data-index="0"]').forEach((el) => el.classList.add('is-active'));
     placeThumb();
     window.addEventListener('resize', placeThumb);
+
+    // Satırlar görünüşe girince sırayla belirir
+    gsap.matchMedia().add(allowMotionQuery, () => {
+      gsap.fromTo(
+        section.querySelectorAll('.kilo__row'),
+        { autoAlpha: 0, y: 22 },
+        {
+          autoAlpha: 1,
+          y: 0,
+          duration: 0.8,
+          stagger: 0.08,
+          ease: 'expo.out',
+          scrollTrigger: { trigger: section, start: 'top 76%' },
+        }
+      );
+    });
   }
 </script>
 

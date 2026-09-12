@@ -1,16 +1,16 @@
 ---
 import { Picture } from 'astro:assets';
 import Icon from './Icon.astro';
-import { foodImage } from '../lib/images';
+import { venueImage } from '../lib/images';
 import { site } from '../data/site';
 ---
 
 <section class="siparis" id="siparis" aria-labelledby="siparis-baslik">
   <div class="siparis__bg" aria-hidden="true" data-siparis-bg>
     <Picture
-      src={foodImage('kasarli-kofte-tahta')}
+      src={venueImage('sofra')}
       alt=""
-      widths={[900, 1330]}
+      widths={[1000, 1600, 2000]}
       sizes="100vw"
       formats={['avif', 'webp']}
       loading="lazy"

@@ -1,6 +1,6 @@
 ---
 import { Picture } from 'astro:assets';
-import { foodImage } from '../lib/images';
+import { productImage } from '../lib/images';
 import { menu } from '../data/menu';
 
 // Çorbaların basılı menüde fotoğrafı yok; kazan paneli çorba adlarıyla anlatılıyor.
@@ -16,7 +16,7 @@ const ocaklar = [
     lead: 'Her gün taze ciğer.',
     body: 'Ciğer şiş, Adana ve Urfa közün üstünde pişer, sıcacık lavaşa sarılıp masaya gelir.',
     image: 'ciger-sis',
-    alt: 'Tepside sekiz şiş ciğer şiş, yanında lavaş',
+    alt: 'Izgarada sıralanmış ciğer şişler, yanında lavaş',
     link: { href: '/menu#kebaplar', label: 'Kebap menüsü' },
   },
   {
@@ -24,8 +24,8 @@ const ocaklar = [
     word: 'Odun ateşi',
     lead: 'Odun ateşinde pide çeşitleri.',
     body: 'Kıymalı, kuşbaşılı, kaşarlı pideler ve ince hamurlu lahmacun, fırından çıktığı gibi.',
-    image: 'karisik-pide',
-    alt: 'Tabakta dilimlenmiş karışık pide',
+    image: 'kusbasili-pide',
+    alt: 'Tabakta dilimlenmiş kuşbaşılı pide',
     link: { href: '/menu#pideler', label: 'Pide menüsü' },
   },
   {
@@ -34,6 +34,8 @@ const ocaklar = [
     lead: 'Şifa dolu kemik suyu çorbalar.',
     body: 'Dokuz çeşit çorba, yanında sarımsağı ve sirkesiyle.',
     meta: "Pazartesi - Cumartesi 07:00'den, Pazar 08:30'dan itibaren",
+    image: 'iskembe',
+    alt: 'Kasede işkembe çorbası, yanında limon',
     soups,
     link: { href: '/menu#corbalar', label: 'Çorba menüsü' },
   },
@@ -58,10 +60,10 @@ const ocaklar = [
 
             {
               o.image ? (
-                <figure class="ocak__photo stage" data-ocak-photo>
+                <figure class="ocak__photo" data-ocak-photo>
                   <Picture
-                    class="cutout"
-                    src={foodImage(o.image)}
+                    class="cutout cutout--framed"
+                    src={productImage(o.image)}
                     alt={o.alt}
                     widths={[360, 540, 720]}
                     sizes="(min-width: 768px) 42vw, 88vw"
@@ -69,16 +71,19 @@ const ocaklar = [
                     loading="lazy"
                   />
                 </figure>
-              ) : (
-                <ul class="ocak__soups" data-ocak-photo>
-                  {o.soups!.map((soup) => (
-                    <li>{soup}</li>
-                  ))}
-                </ul>
-              )
+              ) : null
             }
 
             <div class="ocak__text">
+              {
+                o.soups ? (
+                  <ul class="ocak__soups">
+                    {o.soups.map((soup) => (
+                      <li>{soup}</li>
+                    ))}
+                  </ul>
+                ) : null
+              }
               <p class="ocak__lead display">{o.lead}</p>
               <p class="ocak__body">{o.body}</p>
               {o.meta && <p class="ocak__meta">{o.meta}</p>}
@@ -179,17 +184,18 @@ const ocaklar = [
   .ocak__soups {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem;
-    align-content: center;
+    gap: 0.4rem;
+    order: 3;
+    margin-top: 0.5rem;
   }
 
   .ocak__soups li {
-    padding: 0.5rem 1rem;
+    padding: 0.35rem 0.8rem;
     border-radius: 9999px;
     background-color: rgb(241 232 216 / 0.06);
     box-shadow: inset 0 0 0 1px rgb(241 232 216 / 0.12);
     font-family: var(--font-display);
-    font-size: clamp(1.1rem, 1.6vw, 1.5rem);
+    font-size: clamp(0.95rem, 1.2vw, 1.15rem);
     font-weight: 700;
     line-height: 1.1;
   }
@@ -260,8 +266,7 @@ const ocaklar = [
       font-size: clamp(4.5rem, 11vw, 11rem);
     }
 
-    .ocak__photo,
-    .ocak__soups {
+    .ocak__photo {
       z-index: 1;
       grid-column: 7 / -1;
       grid-row: 1 / 3;

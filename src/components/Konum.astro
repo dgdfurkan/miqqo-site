@@ -80,6 +80,26 @@ const hours = groupedHours();
 </section>
 
 <script>
+  import { gsap, allowMotionQuery } from '../scripts/motion';
+
+  const section = document.querySelector<HTMLElement>('.konum');
+  if (section) {
+    gsap.matchMedia().add(allowMotionQuery, () => {
+      gsap.fromTo(
+        section.querySelectorAll('.konum__title, .konum__address, .konum__hours, .konum__actions, .konum__map'),
+        { autoAlpha: 0, y: 24 },
+        {
+          autoAlpha: 1,
+          y: 0,
+          duration: 0.85,
+          stagger: 0.07,
+          ease: 'expo.out',
+          scrollTrigger: { trigger: section, start: 'top 78%' },
+        }
+      );
+    });
+  }
+
   const holder = document.querySelector<HTMLElement>('[data-map]');
   const template = document.querySelector<HTMLTemplateElement>('[data-map-template]');
 

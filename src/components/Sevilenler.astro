@@ -1,7 +1,7 @@
 ---
 import { Picture } from 'astro:assets';
 import { menu, findItem, portionPrice, type MenuItem } from '../data/menu';
-import { foodImage } from '../lib/images';
+import { dishImage, hasProductImage } from '../lib/images';
 import { formatPrice } from '../data/site';
 
 // Google'da "popüler" işaretli ve Migros Yemek'te en çok sipariş edilenler (docs/marka-arastirmasi.md),
@@ -26,10 +26,10 @@ const total = menu.reduce((sum, c) => sum + c.items.length, 0);
           <article class="dish" data-pan-card>
             <div class="dish__stage stage">
               <Picture
-                class:list={['cutout', item.framed && 'cutout--framed']}
-                src={foodImage(item.image)}
+                class:list={['cutout', (item.framed || hasProductImage(item.image)) && 'cutout--framed']}
+                src={dishImage(item.image)}
                 alt={item.name}
-                widths={[320, 480, 640]}
+                widths={[320, 480, 700]}
                 sizes="(min-width: 1024px) 26vw, 70vw"
                 formats={['webp']}
                 loading="lazy"

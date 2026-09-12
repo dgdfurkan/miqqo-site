@@ -1,0 +1,384 @@
+---
+import { Picture } from 'astro:assets';
+import Icon from './Icon.astro';
+import { findItem, portionPrice, type MenuItem } from '../data/menu';
+import { productImage, hasProductImage } from '../lib/images';
+import { formatPrice, site } from '../data/site';
+
+// Panoya girebilecek ürünler. Günün tohumu bunların içinden seçip sıralar,
+// seçilmeyenler klonlanırken DOM'a hiç girmiyor, yani görselleri indirilmiyor.
+const aday = ['ciger-sis', 'adana-kebap', 'karisik-izgara', 'kuzu-pirzola', 'special-sis', 'kusbasili-pide', 'iskembe', 'kunefe'];
+const items = aday
+  .map((id) => findItem(id))
+  .filter((item): item is MenuItem & { image: string } => !!item?.image && hasProductImage(item.image));
+
+const klipler = ['fire-grill', 'ocakta-pide', 'table-show-solen'];
+---
+
+<dialog class="duyuru" aria-labelledby="duyuru-baslik" data-duyuru>
+  <div class="duyuru__panel" data-duyuru-panel>
+    <button class="duyuru__close" type="button" aria-label="Panoyu kapat" data-duyuru-close>
+      <Icon name="x-bold" size={20} />
+    </button>
+
+    <header class="duyuru__head">
+      <p class="duyuru__eyebrow">Bugünün panosu</p>
+      <h2 id="duyuru-baslik" class="display duyuru__title" data-duyuru-title>Sofrada ne var?</h2>
+      <p class="duyuru__lead" data-duyuru-lead>Her gün değişen öneriler.</p>
+    </header>
+
+    <div class="duyuru__stage" data-duyuru-stage></div>
+
+    <footer class="duyuru__foot">
+      <a class="btn btn-koz" href="/menu">Menüyü gör</a>
+      <a class="btn btn-line" href={site.phone.href} aria-label={`Telefonla ara: ${site.phone.display}`}>
+        <Icon name="phone-bold" size={18} />
+        <span>{site.phone.display}</span>
+      </a>
+    </footer>
+  </div>
+</dialog>
+
+<template data-duyuru-tpl>
+  {
+    items.map((item) => (
+      <figure class="pano" data-duyuru-card>
+        <div class="pano__photo">
+          <Picture
+            src={productImage(item.image)}
+            alt={item.name}
+            widths={[420, 640, 900]}
+            sizes="(min-width: 768px) 40vw, 88vw"
+            formats={['webp']}
+            loading="lazy"
+          />
+        </div>
+        <figcaption class="pano__meta">
+          <span class="display pano__name">{item.name}</span>
+          <span class="display pano__price">{formatPrice(portionPrice(item)!)}</span>
+        </figcaption>
+      </figure>
+    ))
+  }
+  {
+    klipler.map((klip) => (
+      <figure class="pano pano--klip" data-duyuru-klip>
+        <video
+          class="pano__video"
+          poster={`/video/${klip}-poster.jpg`}
+          data-src={`/video/${klip}.mp4`}
+          muted
+          loop
+          playsinline
+          preload="none"
+          aria-hidden="true"></video>
+        <figcaption class="pano__meta">
+          <span class="display pano__name">Ocak başında</span>
+        </figcaption>
+      </figure>
+    ))
+  }
+</template>
+
+<script>
+  import { gsap, lockScroll, prefersReducedMotion } from '../scripts/motion';
+
+  const KEY = 'miqqo-duyuru';
+  const dialog = document.querySelector<HTMLDialogElement>('[data-duyuru]');
+  const template = document.querySelector<HTMLTemplateElement>('[data-duyuru-tpl]');
+  const stage = dialog?.querySelector<HTMLElement>('[data-duyuru-stage]');
+  const panel = dialog?.querySelector<HTMLElement>('[data-duyuru-panel]');
+  const titleEl = dialog?.querySelector<HTMLElement>('[data-duyuru-title]');
+  const leadEl = dialog?.querySelector<HTMLElement>('[data-duyuru-lead]');
+
+  if (dialog && template && stage && panel) {
+    const gunKodu = () =>
+      new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Europe/Istanbul',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      }).format(new Date());
+
+    // Aynı gün herkeste aynı pano çıksın diye tohum tarihten geliyor.
+    const tohum = (metin: string) => {
+      let h = 2166136261;
+      for (let i = 0; i < metin.length; i += 1) {
+        h ^= metin.charCodeAt(i);
+        h = Math.imul(h, 16777619);
+      }
+      return h >>> 0;
+    };
+
+    const zar = (seed: number) => () => {
+      seed = (seed + 0x6d2b79f5) | 0;
+      let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+
+    const duzenler = [
+      { ad: 'tek', adet: 1, baslik: 'Bugün bunu öneriyoruz.', alt: 'Ustanın günün seçimi.' },
+      { ad: 'uclu', adet: 3, baslik: 'Bugünün üçlüsü.', alt: 'En çok sevilenlerden.' },
+      { ad: 'dortlu', adet: 4, baslik: 'Sofrada ne var?', alt: 'Dört tabak, bir sofra.' },
+      { ad: 'klipli', adet: 2, baslik: 'Ocak başından.', alt: 'Kısa bir görüntü, iki tabak.' },
+    ];
+
+    const kur = (gun: string) => {
+      const rand = zar(tohum(gun));
+      const duzen = duzenler[Math.floor(rand() * duzenler.length)];
+      const parca = template.content.cloneNode(true) as DocumentFragment;
+      const kartlar = [...parca.querySelectorAll<HTMLElement>('[data-duyuru-card]')];
+      const klipler = [...parca.querySelectorAll<HTMLElement>('[data-duyuru-klip]')];
+
+      const karisik = kartlar
+        .map((kart) => ({ kart, n: rand() }))
+        .sort((a, b) => a.n - b.n)
+        .map((x) => x.kart);
+      const kalan = new Set(karisik.slice(0, duzen.adet));
+      kartlar.forEach((kart) => {
+        if (!kalan.has(kart)) kart.remove();
+      });
+
+      const secilenKlip = duzen.ad === 'klipli' ? klipler[Math.floor(rand() * klipler.length)] : null;
+      klipler.forEach((klip) => {
+        if (klip !== secilenKlip) klip.remove();
+      });
+
+      stage.dataset.duzen = duzen.ad;
+      if (titleEl) titleEl.textContent = duzen.baslik;
+      if (leadEl) leadEl.textContent = duzen.alt;
+      stage.replaceChildren(parca);
+
+      const video = stage.querySelector<HTMLVideoElement>('video');
+      if (video?.dataset.src) {
+        video.src = video.dataset.src;
+        if (!prefersReducedMotion()) video.play().catch(() => {});
+        else video.controls = true;
+      }
+    };
+
+    const kapat = () => {
+      stage.querySelector('video')?.pause();
+      const bitir = () => {
+        dialog.close();
+        lockScroll(false);
+        stage.replaceChildren();
+        gsap.set(panel, { clearProps: 'all' });
+      };
+      if (prefersReducedMotion()) return bitir();
+      gsap.to(panel, { autoAlpha: 0, y: 18, duration: 0.3, ease: 'power2.in', onComplete: bitir });
+    };
+
+    const ac = (zorla = false) => {
+      const gun = gunKodu();
+      if (!zorla) {
+        try {
+          if (localStorage.getItem(KEY) === gun) return;
+        } catch {}
+      }
+      kur(gun);
+      dialog.showModal();
+      lockScroll(true);
+      try {
+        localStorage.setItem(KEY, gun);
+      } catch {}
+
+      if (prefersReducedMotion()) return;
+      gsap
+        .timeline({ defaults: { ease: 'expo.out' } })
+        .fromTo(panel, { autoAlpha: 0, y: 34, scale: 0.97 }, { autoAlpha: 1, y: 0, scale: 1, duration: 0.7 })
+        .fromTo(
+          stage.querySelectorAll('.pano'),
+          { autoAlpha: 0, y: 26, scale: 0.96 },
+          { autoAlpha: 1, y: 0, scale: 1, duration: 0.7, stagger: 0.09 },
+          0.18
+        );
+    };
+
+    dialog.querySelector('[data-duyuru-close]')?.addEventListener('click', kapat);
+    dialog.addEventListener('cancel', (event) => {
+      event.preventDefault();
+      kapat();
+    });
+    dialog.addEventListener('click', (event) => {
+      if (event.target === dialog) kapat();
+    });
+    dialog.querySelectorAll('a[href]').forEach((link) => link.addEventListener('click', kapat));
+
+    // Footer'daki bağlantı panoyu tekrar açar
+    document.querySelectorAll('[data-duyuru-open]').forEach((el) =>
+      el.addEventListener('click', (event) => {
+        event.preventDefault();
+        ac(true);
+      })
+    );
+
+    // Hero girişini kesmesin diye kısa bir gecikme
+    window.setTimeout(() => ac(false), 900);
+  }
+</script>
+
+<style>
+  .duyuru {
+    width: 100%;
+    max-width: none;
+    max-height: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--color-lavas);
+  }
+
+  .duyuru[open] {
+    position: fixed;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    height: 100dvh;
+    padding: clamp(12px, 3vw, 40px);
+  }
+
+  .duyuru__panel {
+    position: relative;
+    width: min(100%, 62rem);
+    max-height: 92dvh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: clamp(22px, 3.4vw, 40px);
+    border-radius: var(--radius-sheet);
+    background:
+      radial-gradient(90% 70% at 12% 0%, rgb(252 72 36 / 0.16), transparent 68%),
+      var(--color-is);
+    box-shadow:
+      inset 0 0 0 1px rgb(241 232 216 / 0.12),
+      0 30px 90px rgb(0 0 0 / 0.55);
+  }
+
+  .duyuru__close {
+    position: absolute;
+    top: 0.9rem;
+    right: 0.9rem;
+    z-index: 2;
+    display: grid;
+    place-items: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 9999px;
+    background-color: rgb(15 16 14 / 0.6);
+    color: var(--color-lavas);
+  }
+
+  .duyuru__close:hover {
+    background-color: rgb(15 16 14 / 0.85);
+  }
+
+  .duyuru__eyebrow {
+    color: var(--color-koz);
+    font-size: 0.8125rem;
+    font-weight: 600;
+  }
+
+  .duyuru__title {
+    margin-top: 0.3rem;
+    font-size: clamp(1.9rem, 4.4vw, 2.9rem);
+  }
+
+  .duyuru__lead {
+    margin-top: 0.4rem;
+    color: var(--color-kul);
+  }
+
+  .duyuru__stage {
+    display: grid;
+    gap: clamp(10px, 1.4vw, 16px);
+    margin-top: clamp(18px, 2.4vw, 28px);
+  }
+
+  .duyuru__stage[data-duzen='uclu'],
+  .duyuru__stage[data-duzen='klipli'] {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+  }
+
+  .duyuru__stage[data-duzen='dortlu'] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .pano {
+    position: relative;
+    overflow: hidden;
+    border-radius: var(--radius-media);
+    background-color: var(--color-komur);
+  }
+
+  .pano :global(picture),
+  .pano :global(img),
+  .pano__video {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  .pano :global(img),
+  .pano__video {
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+  }
+
+  .duyuru__stage[data-duzen='tek'] .pano :global(img) {
+    aspect-ratio: 16 / 10;
+  }
+
+  .pano__meta {
+    position: absolute;
+    inset: auto 0 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: clamp(12px, 1.8vw, 20px);
+    background: linear-gradient(0deg, rgb(15 16 14 / 0.92), rgb(15 16 14 / 0.35) 70%, transparent);
+  }
+
+  .pano__name {
+    font-size: clamp(1.1rem, 1.8vw, 1.6rem);
+    line-height: 1;
+  }
+
+  .pano__price {
+    color: var(--color-koz);
+    font-size: clamp(1.05rem, 1.6vw, 1.45rem);
+    line-height: 1;
+  }
+
+  .duyuru__foot {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: clamp(18px, 2.4vw, 28px);
+  }
+
+  @media (max-width: 479px) {
+    .duyuru__foot .btn {
+      flex: 1 1 100%;
+    }
+  }
+
+  /* Geniş ekranda kartlar tek sıraya geçer: 2x2 düzende panelin altı ekranın dışında kalıyordu. */
+  @media (min-width: 900px) {
+    .duyuru__stage[data-duzen='dortlu'] {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .duyuru__stage[data-duzen='uclu'] {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .duyuru__stage[data-duzen='dortlu'] .pano :global(img),
+    .duyuru__stage[data-duzen='uclu'] .pano :global(img) {
+      aspect-ratio: 3 / 4;
+    }
+  }
+</style>

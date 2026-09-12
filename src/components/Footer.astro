@@ -80,6 +80,7 @@ const signOff = 'Afiyet olsun.';
       <nav aria-label="Alt menü" class="site-footer__nav">
         <a class="link-underline" href="/menu">Menü</a>
         <a class="link-underline" href="/iletisim">İletişim</a>
+        <button class="site-footer__button link-underline" type="button" data-duyuru-open>Bugünün panosu</button>
         <a class="link-underline" href={site.links.googleReview} rel="noopener" target="_blank">Google'da yorum yaz</a>
       </nav>
     </div>
@@ -194,6 +195,11 @@ const signOff = 'Afiyet olsun.';
     display: flex;
     flex-wrap: wrap;
     gap: 1.25rem;
+  }
+
+  .site-footer__button {
+    color: inherit;
+    font: inherit;
   }
 
   @media (min-width: 640px) {

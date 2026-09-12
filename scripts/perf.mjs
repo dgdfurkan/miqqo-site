@@ -53,6 +53,18 @@ for (const profile of profiles) {
     timezoneId: 'Europe/Istanbul',
   });
   await context.addInitScript(recorder);
+  // Duyuru panosu kaydırmayı kilitliyor, ölçümde kapalı tutulur.
+  await context.addInitScript(() => {
+    try {
+      const gun = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Europe/Istanbul',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      }).format(new Date());
+      localStorage.setItem('miqqo-duyuru', gun);
+    } catch {}
+  });
   const page = await context.newPage();
   const cdp = await context.newCDPSession(page);
   await cdp.send('Emulation.setCPUThrottlingRate', { rate: cpu });

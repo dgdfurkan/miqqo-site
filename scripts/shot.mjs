@@ -54,6 +54,22 @@ for (const view of views) {
     timezoneId: 'Europe/Istanbul',
     colorScheme: 'dark',
   });
+  // Günün duyuru panosu açılışta kendiliğinden açılıyor; kaydırmayı kilitlediği için
+  // ekran görüntülerinde varsayılan olarak bastırılır. Panoyu görmek için: --duyuru
+  if (!args.includes('--duyuru')) {
+    await context.addInitScript(() => {
+      try {
+        const gun = new Intl.DateTimeFormat('en-CA', {
+          timeZone: 'Europe/Istanbul',
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+        }).format(new Date());
+        localStorage.setItem('miqqo-duyuru', gun);
+      } catch {}
+    });
+  }
+
   const page = await context.newPage();
   const errors = [];
   page.on('console', (msg) => msg.type() === 'error' && errors.push(msg.text()));

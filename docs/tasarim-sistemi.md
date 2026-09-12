@@ -77,16 +77,36 @@ Kapsayıcı en fazla 1360 px, yan boşluk `clamp(20px, 4vw, 56px)`. Masaüstünd
 Ana sayfa bölümleri ve yerleşim aileleri (her aile bir kez):
 
 ```
-1 Hero            asimetrik bölünmüş: sol 7 kolon tipografi + şiş, sağ 5 kolon fotoğraf
-2 Şerit           tek marquee, ürün adları, kaydırma hızına tepki verir
-3 Üç ocak         sticky stack: Mangal / Odun fırını / Kazan, her panel tam yükseklik
-4 En çok sevilenler  yatay kaydırma (masaüstü pin + scrub, mobil scroll-snap)
-5 Yorumlar        bento: Google puanı, iki kısa yorum, sofra fotoğrafı, açık/kapalı durumu
-6 Kiloluk menüler segment kontrol (500 gr / 1 kg) ve fiyatları değişen liste
-7 Sipariş bandı   tam genişlik, karartılmış fotoğraf, telefon ve platform linkleri
-8 Konum           adres ve saatler solda, harita sağda
-9 Footer          büyük logo, "Afiyet olsun."
+ 1 Duyuru panosu    açılışta modal: günün seçkisi, günde bir kez
+ 2 Hero             asimetrik bölünmüş: sol 7 kolon tipografi + şiş, sağ 5 kolon fotoğraf
+ 3 Şerit            tek marquee, ürün adları, kaydırma hızına tepki verir
+ 4 Üç ocak          sticky stack: Mangal / Odun ateşi / Kazan, her panel tam yükseklik
+ 5 En çok sevilenler yatay kaydırma (masaüstü pin + scrub, mobil scroll-snap)
+ 6 Ocak başında     sessiz video duvarı, asimetrik grid
+ 7 Mekan            dükkan fotoğrafları, bento
+ 8 Yorumlar         bento: Google puanı, iki kısa yorum, salon fotoğrafı, açık/kapalı durumu
+ 9 Kiloluk menüler  segment kontrol (500 gr / 1 kg) ve fiyatları değişen liste
+10 Sipariş bandı    tam genişlik, karartılmış sofra fotoğrafı, telefon ve platform linkleri
+11 Konum            adres ve saatler solda, harita sağda
+12 Footer           büyük logo, "Afiyet olsun."
 ```
+
+## Günün duyuru panosu
+
+Siteye girişte açılan modal. Kuralları:
+
+- Gün kodu İstanbul saatine göre `YYYY-MM-DD`. Tohum bu koddan üretiliyor, yani **aynı gün bütün ziyaretçilerde aynı pano** çıkıyor, ertesi gün düzen ve ürünler değişiyor.
+- Dört düzen var: tek kare, üçlü, dörtlü, klipli (bir sessiz video + iki tabak). Düzen ve ürün sıralaması tohumla seçiliyor.
+- Günde bir kez gösterilir (`localStorage`, anahtar `miqqo-duyuru`). Footer'daki "Bugünün panosu" bağlantısı tekrar açar.
+- Bütün adaylar `<template>` içinde duruyor; seçilmeyen kartlar klonlanırken kaldırıldığı için görselleri hiç indirilmiyor.
+- Ekran görüntüsü ve performans ölçümlerinde pano bastırılır (`shot.mjs` varsayılan, görmek için `--duyuru`).
+
+## Video kullanımı
+
+- Kaynak klipler `assets/*.mp4` (depoda değil). Web sürümleri `public/video/` altında: sessiz, 720p, CRF 27, faststart, yanında poster JPG.
+- `<video>` etiketleri `preload="none"` ve `data-src` ile durur; kaynak yalnız görünüşe yaklaşınca atanır, görünürden çıkınca duraklatılır, sekme arka plana geçince duraklatılır.
+- Hareket azaltma açıkken otomatik oynatma yok, `controls` açılır.
+- Hero'da video kullanılmıyor: ilk boyamayı geciktirmemesi için orada fotoğraf var.
 
 Hero masaüstü:
 

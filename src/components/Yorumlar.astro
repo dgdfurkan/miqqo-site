@@ -2,7 +2,7 @@
 import { Picture } from 'astro:assets';
 import Icon from './Icon.astro';
 import StatusBadge from './StatusBadge.astro';
-import { foodImage } from '../lib/images';
+import { venueImage } from '../lib/images';
 import { site } from '../data/site';
 import { groupedHours } from '../lib/hours';
 
@@ -48,9 +48,9 @@ const quotes = [
 
       <figure class="bento__photo" data-reveal>
         <Picture
-          src={foodImage('special-sis')}
-          alt="Mangal tepsisinde et ve ciğer şiş, yanında mezeler, salata ve lavaş"
-          widths={[400, 620, 940]}
+          src={venueImage('salon-1')}
+          alt="Miqqo salonunda dolu masalar"
+          widths={[400, 620, 940, 1200]}
           sizes="(min-width: 900px) 46vw, 92vw"
           formats={['avif', 'webp']}
           loading="lazy"

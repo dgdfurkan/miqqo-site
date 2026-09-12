@@ -54,7 +54,19 @@ public/               favicon, ikonlar, robots.txt
 - Fiyat, ürün, kategori: `src/data/menu.ts`. Kaynak, işletmenin basılı menü PDF'i; eski web sitesi menüsü güncel değil. Adım adım akış için `menu-guncelle` skill'i.
 - Ürün fotoğrafları basılı menüden çıkarılmış alfa kanallı kesimler. Çerçeveli fotoğraf gibi değil, `stage` ve `cutout` sınıflarıyla koyu zeminde durur.
 - Telefon, saat, adres, link, Google puanı: `src/data/site.ts`. Google puanını güncellerken `rating.checkedAt` tarihini de değiştir.
-- Fotoğraf değiştirmek: aynı dosya adıyla `src/assets/food/` altına koy. Kaynak fotoğrafların çoğu yaklaşık 800x600; daha büyük orijinal gelirse doğrudan değiştir.
+- Fotoğraf değiştirmek: aynı dosya adıyla ilgili klasöre koy. Üç koleksiyon var ve `src/lib/images.ts` üçünü de tarar:
+  - `src/assets/products/` ajans çekimleri, gerçek tabak fotoğrafları (dosya adı menü kimliği)
+  - `src/assets/food/` basılı menüden çıkarılan alfa kanallı kesimler (menü listesindeki küçük görseller)
+  - `src/assets/venue/` dükkan: cephe, tabela, salon, çocuk alanı, sofra, ocak
+  `dishImage(slug)` gerçek çekimi, yoksa kesimi döndürür.
+- Ham malzeme (`assets/`, 600 MB) ve basılı menü PDF'i git dışında, yalnız yerelde. İşlenmiş hâlleri depoda.
+- Yeni video eklerken:
+  ```bash
+  ffmpeg -i "assets/<ad>.mp4" -an -vf "scale=1280:-2:flags=lanczos" -c:v libx264 -crf 27 -preset slow \
+    -pix_fmt yuv420p -movflags +faststart "public/video/<slug>.mp4"
+  ffmpeg -ss 0.5 -i "assets/<ad>.mp4" -frames:v 1 -vf "scale=1280:-2" -q:v 5 "public/video/<slug>-poster.jpg"
+  ```
+  Sonra `src/components/Mutfak.astro` içindeki listeye ekle.
 
 ## Hareket kuralları (özet)
 

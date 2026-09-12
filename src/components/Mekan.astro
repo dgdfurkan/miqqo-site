@@ -1,0 +1,156 @@
+---
+import { Picture } from 'astro:assets';
+import { venueImage } from '../lib/images';
+
+const kareler = [
+  {
+    slug: 'cephe-aksam',
+    alt: 'Ciğerci Miqqo dükkanının akşam saatlerinde ışıklı cephesi',
+    yer: 'buyuk',
+    baslik: 'Malazgirt 1071 Caddesi',
+  },
+  { slug: 'tabela', alt: 'Çatıdaki ışıklı Ciğerci Miqqo tabelası', yer: 'dikey', baslik: 'Tabelayı görünce durun' },
+  { slug: 'salon-1', alt: 'Miqqo salonunda dolu masalar ve ahşap zemin', yer: 'genis', baslik: 'Aile masaları' },
+  { slug: 'cocuk-alani', alt: 'Salonun içindeki çocuk oyun alanı', yer: 'kucuk', baslik: 'Çocuk oyun alanı' },
+];
+---
+
+<section class="mekan" id="mekan" aria-labelledby="mekan-baslik">
+  <div class="container-site">
+    <h2 id="mekan-baslik" class="display mekan__title">Mekan</h2>
+    <p class="mekan__lead">
+      Eryaman'da, Malazgirt 1071 Caddesi üzerinde. İçeride aile masaları ve çocuklar için oyun alanı var.
+    </p>
+
+    <div class="mekan__grid">
+      {
+        kareler.map((kare) => (
+          <figure class:list={['kare', `kare--${kare.yer}`]} data-kare>
+            <Picture
+              src={venueImage(kare.slug)}
+              alt={kare.alt}
+              widths={[480, 760, 1100]}
+              sizes="(min-width: 768px) 46vw, 92vw"
+              formats={['avif', 'webp']}
+              loading="lazy"
+            />
+            <figcaption class="kare__baslik">{kare.baslik}</figcaption>
+          </figure>
+        ))
+      }
+    </div>
+  </div>
+</section>
+
+<script>
+  import { gsap, allowMotionQuery } from '../scripts/motion';
+
+  const section = document.querySelector<HTMLElement>('.mekan');
+
+  if (section) {
+    gsap.matchMedia().add(allowMotionQuery, () => {
+      gsap.fromTo(
+        section.querySelectorAll('[data-kare]'),
+        { clipPath: 'inset(14% 8% 14% 8% round 20px)', autoAlpha: 0 },
+        {
+          clipPath: 'inset(0% 0% 0% 0% round 20px)',
+          autoAlpha: 1,
+          duration: 1.1,
+          stagger: 0.09,
+          ease: 'expo.out',
+          scrollTrigger: { trigger: section, start: 'top 78%' },
+        }
+      );
+    });
+  }
+</script>
+
+<style>
+  .mekan {
+    padding-block: clamp(56px, 9vw, 120px);
+  }
+
+  .mekan__title {
+    font-size: clamp(2.75rem, 6.5vw, 6rem);
+  }
+
+  .mekan__lead {
+    max-width: 40ch;
+    margin-top: 1rem;
+    color: rgb(241 232 216 / 0.8);
+  }
+
+  .mekan__grid {
+    display: grid;
+    gap: clamp(12px, 1.6vw, 20px);
+    margin-top: clamp(28px, 4vw, 48px);
+  }
+
+  .kare {
+    position: relative;
+    overflow: hidden;
+    border-radius: var(--radius-media);
+    background-color: var(--color-is);
+  }
+
+  .motion .mekan__grid > .kare {
+    visibility: hidden;
+  }
+
+  .kare :global(picture),
+  .kare :global(img) {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  .kare :global(img) {
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+  }
+
+  .kare__baslik {
+    position: absolute;
+    inset: auto 0 0;
+    padding: clamp(12px, 1.8vw, 20px);
+    background: linear-gradient(0deg, rgb(15 16 14 / 0.9), rgb(15 16 14 / 0.3) 70%, transparent);
+    font-family: var(--font-display);
+    font-size: clamp(1.05rem, 1.5vw, 1.4rem);
+    font-weight: 700;
+  }
+
+  @media (min-width: 768px) {
+    .mekan__grid {
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+    }
+
+    .kare--buyuk {
+      grid-column: span 7;
+      grid-row: span 2;
+    }
+
+    .kare--buyuk :global(img) {
+      aspect-ratio: 5 / 4;
+    }
+
+    .kare--dikey {
+      grid-column: span 5;
+    }
+
+    .kare--dikey :global(img) {
+      aspect-ratio: 16 / 10;
+    }
+
+    .kare--kucuk {
+      grid-column: span 5;
+    }
+
+    .kare--genis {
+      grid-column: span 12;
+    }
+
+    .kare--genis :global(img) {
+      aspect-ratio: 21 / 9;
+    }
+  }
+</style>
