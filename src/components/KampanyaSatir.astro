@@ -1,0 +1,198 @@
+---
+import { Picture } from 'astro:assets';
+import { foodImage } from '../lib/images';
+import { formatPrice } from '../data/site';
+import { durumEkoFiyat, durumNot } from '../data/kampanya';
+
+// Biçim 3: ilan satırı. İki kural arasında tek cümle, araya giren kısa duyuru gibi.
+// Kurallar ayrı eleman çünkü kenarlık animasyonu yapılamıyor, çizgi GSAP ile çizilir.
+// Fiyat gerçek: dürümlerin en düşük eko fiyatı (src/data/kampanya.ts).
+---
+
+<section class="kural" aria-labelledby="kural-baslik">
+  <div class="container-site">
+    <div class="kural__blok" data-kural>
+      <span class="kural__cizgi" aria-hidden="true" data-kural-cizgi></span>
+
+      <div class="kural__ust">
+        <p class="kural__etiket">Dürümler</p>
+        <p class="kural__not">{durumNot}</p>
+      </div>
+
+      <div class="kural__orta">
+        <h2 id="kural-baslik" class="display kural__cumle">
+          <span class="mask">
+            <span data-rise>Dürüm alana <span class="kural__vurgu">ikram</span> var.</span>
+          </span>
+        </h2>
+
+        <div class="kural__foto" data-kural-foto>
+          <Picture
+            class="kural__kesim"
+            src={foodImage('et-sis-durum')}
+            alt="Lavaşa sarılmış et şiş dürüm"
+            widths={[260, 420]}
+            sizes="220px"
+            formats={['webp']}
+            loading="lazy"
+            data-media-id="kesim-et-sis-durum"
+          />
+        </div>
+      </div>
+
+      <div class="kural__alt">
+        <p class="kural__fiyat">
+          <span class="display kural__fiyat-sayi">{formatPrice(durumEkoFiyat)}</span>
+          <span class="kural__fiyat-metin">eko dürümden başlar</span>
+        </p>
+        <a class="btn btn-line kural__cta" href="/menu#durumler">Dürüm menüsü</a>
+      </div>
+
+      <span class="kural__cizgi kural__cizgi--alt" aria-hidden="true" data-kural-cizgi></span>
+    </div>
+  </div>
+</section>
+
+<script>
+  import { gsap, allowMotionQuery } from '../scripts/motion';
+
+  const blok = document.querySelector<HTMLElement>('[data-kural]');
+
+  if (blok) {
+    gsap.matchMedia().add(allowMotionQuery, () => {
+      const cizgiler = blok.querySelectorAll('[data-kural-cizgi]');
+      const cumle = blok.querySelectorAll('[data-rise]');
+      const foto = blok.querySelector('[data-kural-foto]');
+
+      gsap
+        .timeline({ scrollTrigger: { trigger: blok, start: 'top 80%' } })
+        .fromTo(
+          cizgiler,
+          { scaleX: 0 },
+          { scaleX: 1, duration: 0.8, ease: 'expo.out', transformOrigin: 'left center', stagger: 0.08 }
+        )
+        .fromTo(
+          cumle,
+          { yPercent: 112, autoAlpha: 0 },
+          { yPercent: 0, autoAlpha: 1, duration: 0.9, ease: 'expo.out' },
+          0.15
+        )
+        .fromTo(foto, { autoAlpha: 0, scale: 0.94 }, { autoAlpha: 1, scale: 1, duration: 0.7, ease: 'expo.out' }, 0.25);
+    });
+  }
+</script>
+
+<style>
+  .kural {
+    padding-block: clamp(48px, 7vw, 96px);
+  }
+
+  .kural__blok {
+    position: relative;
+    padding-block: clamp(16px, 2.5vw, 26px);
+  }
+
+  /* Kurallar ayrı eleman: kenarlık animasyonu yerine çizgi soldan sağa çizilir */
+  .kural__cizgi {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    display: block;
+    height: 3px;
+    background-color: rgb(241 232 216 / 0.9);
+  }
+
+  .kural__cizgi--alt {
+    top: auto;
+    bottom: 0;
+  }
+
+  .kural__ust {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1rem;
+    align-items: baseline;
+    padding-bottom: clamp(12px, 2vw, 20px);
+  }
+
+  .kural__etiket {
+    color: var(--color-koz);
+    font-family: var(--font-display);
+    font-size: 0.9rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .kural__not {
+    color: var(--color-kul);
+    font-size: 0.92rem;
+  }
+
+  .kural__orta {
+    display: grid;
+    gap: clamp(14px, 2vw, 28px);
+    align-items: center;
+  }
+
+  .kural__cumle {
+    font-size: clamp(2.4rem, 8vw, 6rem);
+    line-height: 0.92;
+    text-transform: none;
+  }
+
+  .kural__vurgu {
+    color: var(--color-koz);
+  }
+
+  .kural__foto {
+    width: min(220px, 54%);
+  }
+
+  .kural__kesim {
+    display: block;
+    width: 100%;
+    height: auto;
+    filter: drop-shadow(0 14px 20px rgb(0 0 0 / 0.5));
+  }
+
+  .kural__alt {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.8rem 1.4rem;
+    align-items: center;
+    padding-top: clamp(14px, 2vw, 22px);
+  }
+
+  .kural__fiyat {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+  }
+
+  .kural__fiyat-sayi {
+    color: var(--color-koz);
+    font-size: clamp(1.9rem, 4vw, 2.8rem);
+    line-height: 1;
+  }
+
+  .kural__fiyat-metin {
+    color: rgb(241 232 216 / 0.78);
+    font-size: 0.95rem;
+  }
+
+  .kural__cta {
+    margin-left: auto;
+  }
+
+  @media (min-width: 900px) {
+    .kural__orta {
+      grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    .kural__foto {
+      width: 240px;
+    }
+  }
+</style>

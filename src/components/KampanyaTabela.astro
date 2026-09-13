@@ -1,0 +1,251 @@
+---
+import { Picture } from 'astro:assets';
+import { menu } from '../data/menu';
+import { productImage } from '../lib/images';
+import { formatPrice } from '../data/site';
+import { corbaTabanFiyat } from '../data/kampanya';
+
+// Biçim 1: lokanta duvarındaki fiyat tabelası. Referans web sitesi değil, esnaf
+// tabelası: vidalı çerçeve, noktalı dolgu, sağda hizalı fiyat. Kampanya uydurulmadı,
+// üç çorba gerçekten aynı fiyatta (taban fiyat src/data/kampanya.ts içinde menüden
+// hesaplanıyor).
+const corbalar = menu.find((c) => c.id === 'corbalar')!;
+const tabanlar = corbalar.items.filter((item) => item.price === corbaTabanFiyat);
+const digerler = corbalar.items.filter((item) => (item.price ?? 0) > corbaTabanFiyat);
+---
+
+<section class="tabela" aria-labelledby="tabela-baslik">
+  <div class="container-site">
+    <div class="tabela__kutu" data-tabela>
+      <span class="tabela__vida tabela__vida--sol-ust" aria-hidden="true"></span>
+      <span class="tabela__vida tabela__vida--sag-ust" aria-hidden="true"></span>
+      <span class="tabela__vida tabela__vida--sol-alt" aria-hidden="true"></span>
+      <span class="tabela__vida tabela__vida--sag-alt" aria-hidden="true"></span>
+
+      <div class="tabela__sol">
+        <p class="tabela__ustyazi">Kazan sabah kaynar</p>
+        <p class="display tabela__saat" data-tabela-saat>07<span>:</span>00</p>
+        <h2 id="tabela-baslik" class="display tabela__baslik">Şifa dolu kemik suyu çorbalar</h2>
+        <p class="tabela__alt">Pazar günleri 08:30'dan itibaren.</p>
+        <div class="tabela__foto stage">
+          <Picture
+            class="cutout cutout--framed"
+            src={productImage('iskembe')}
+            alt="Kasede işkembe çorbası"
+            widths={[280, 420]}
+            sizes="240px"
+            formats={['webp']}
+            loading="lazy"
+            data-media-id="urun-iskembe"
+          />
+        </div>
+      </div>
+
+      <div class="tabela__sag">
+        <p class="tabela__grup">
+          <span class="display tabela__grup-fiyat">{formatPrice(corbaTabanFiyat)}</span>
+          <span class="tabela__grup-metin">Hepsi aynı fiyat</span>
+        </p>
+
+        <ul class="tabela__liste">
+          {
+            [...tabanlar, ...digerler].map((item, i) => (
+              <li class="tabela__satir" data-tabela-satir data-rise class:list={[i < tabanlar.length && 'tabela__satir--vurgu']}>
+                <span class="display tabela__ad">{item.name}</span>
+                <span class="tabela__nokta" aria-hidden="true" data-tabela-nokta></span>
+                <span class="display tabela__fiyat">{formatPrice(item.price!)}</span>
+              </li>
+            ))
+          }
+        </ul>
+
+        <a class="btn btn-koz tabela__cta" href="/menu#corbalar">Çorba menüsü</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  import { gsap, allowMotionQuery } from '../scripts/motion';
+
+  const kutu = document.querySelector<HTMLElement>('[data-tabela]');
+
+  if (kutu) {
+    gsap.matchMedia().add(allowMotionQuery, () => {
+      const satirlar = kutu.querySelectorAll('[data-tabela-satir]');
+      const noktalar = kutu.querySelectorAll('[data-tabela-nokta]');
+
+      gsap
+        .timeline({ scrollTrigger: { trigger: kutu, start: 'top 78%' } })
+        .fromTo(
+          satirlar,
+          { autoAlpha: 0, x: -14 },
+          { autoAlpha: 1, x: 0, duration: 0.5, stagger: 0.07, ease: 'expo.out' }
+        )
+        .fromTo(
+          noktalar,
+          { scaleX: 0 },
+          { scaleX: 1, duration: 0.55, stagger: 0.07, ease: 'power2.out', transformOrigin: 'left center' },
+          0.08
+        );
+    });
+  }
+</script>
+
+<style>
+  .tabela {
+    padding-block: clamp(48px, 7vw, 96px);
+  }
+
+  /* Emaye tabela: koyu gövde, ince açık çerçeve, köşelerde vida */
+  .tabela__kutu {
+    position: relative;
+    display: grid;
+    gap: clamp(24px, 3vw, 48px);
+    padding: clamp(24px, 4vw, 52px);
+    border-radius: var(--radius-sheet);
+    background:
+      radial-gradient(120% 90% at 12% 0%, rgb(252 72 36 / 0.1), transparent 60%),
+      var(--color-is);
+    box-shadow:
+      inset 0 0 0 2px rgb(241 232 216 / 0.18),
+      inset 0 0 0 10px rgb(15 16 14 / 0.55);
+  }
+
+  .tabela__vida {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    border-radius: 9999px;
+    background-color: rgb(241 232 216 / 0.35);
+    box-shadow: inset 0 1px 1px rgb(0 0 0 / 0.6);
+  }
+
+  .tabela__vida--sol-ust {
+    top: 14px;
+    left: 14px;
+  }
+
+  .tabela__vida--sag-ust {
+    top: 14px;
+    right: 14px;
+  }
+
+  .tabela__vida--sol-alt {
+    bottom: 14px;
+    left: 14px;
+  }
+
+  .tabela__vida--sag-alt {
+    right: 14px;
+    bottom: 14px;
+  }
+
+  .tabela__ustyazi {
+    color: var(--color-koz);
+    font-family: var(--font-display);
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .tabela__saat {
+    font-size: clamp(4rem, 12vw, 8.5rem);
+    line-height: 0.82;
+  }
+
+  .tabela__saat span {
+    color: var(--color-koz);
+  }
+
+  .tabela__baslik {
+    max-width: 18ch;
+    margin-top: 0.6rem;
+    font-size: clamp(1.6rem, 3vw, 2.6rem);
+    line-height: 1;
+    text-transform: none;
+  }
+
+  .tabela__alt {
+    margin-top: 0.6rem;
+    color: var(--color-kul);
+    font-size: 0.9rem;
+  }
+
+  .tabela__foto {
+    width: min(240px, 62%);
+    margin-top: clamp(16px, 2vw, 28px);
+    aspect-ratio: 4 / 3;
+  }
+
+  .tabela__grup {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    padding-bottom: 0.8rem;
+  }
+
+  .tabela__grup-fiyat {
+    color: var(--color-koz);
+    font-size: clamp(2.6rem, 6vw, 4rem);
+    line-height: 0.9;
+  }
+
+  .tabela__grup-metin {
+    color: rgb(241 232 216 / 0.78);
+    font-size: 0.95rem;
+  }
+
+  .tabela__liste {
+    display: grid;
+  }
+
+  .tabela__satir {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    padding-block: 0.62rem;
+    box-shadow: inset 0 -1px 0 rgb(241 232 216 / 0.12);
+  }
+
+  .tabela__ad {
+    font-size: clamp(1.15rem, 2vw, 1.5rem);
+    line-height: 1;
+  }
+
+  /* Noktalı dolgu: adı fiyata bağlar, basılı menü tabelasındaki gibi */
+  .tabela__nokta {
+    flex: 1;
+    align-self: end;
+    height: 0;
+    margin-bottom: 0.28rem;
+    border-bottom: 2px dotted rgb(241 232 216 / 0.3);
+  }
+
+  .tabela__fiyat {
+    font-size: clamp(1.15rem, 2vw, 1.5rem);
+    line-height: 1;
+  }
+
+  .tabela__satir--vurgu .tabela__fiyat {
+    color: var(--color-koz);
+  }
+
+  .tabela__cta {
+    justify-self: start;
+    margin-top: clamp(20px, 3vw, 32px);
+  }
+
+  @media (min-width: 900px) {
+    .tabela__kutu {
+      grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+      align-items: start;
+    }
+
+    .tabela__foto {
+      width: 100%;
+      max-width: 260px;
+    }
+  }
+</style>

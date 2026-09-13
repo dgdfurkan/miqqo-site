@@ -102,6 +102,29 @@ const jsonLd = {
           if (!d.classList.contains('motion-ready')) d.classList.remove('motion');
         }, 3000);
       })();
+
+      // Günün reklam kuşağı. src/scripts/gun.ts içindeki gununSirasi ile aynı hesap,
+      // burada satır içi duruyor çünkü seçim ilk boyamadan önce yapılmalı, yoksa
+      // yanlış biçim bir an görünüp kayboluyor. Biçim listesi src/data/kampanya.ts
+      // ile aynı sırada. Her üç günde üç biçim de bir kez çıkar.
+      (function () {
+        var bicimler = ['afis', 'tabela', 'satir'];
+        var gun = new Intl.DateTimeFormat('en-CA', {
+          timeZone: 'Europe/Istanbul',
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+        }).format(new Date());
+        var p = gun.split('-');
+        var gunSayisi = Math.floor(Date.UTC(+p[0], +p[1] - 1, +p[2]) / 86400000);
+        var blok = String(Math.floor(gunSayisi / bicimler.length));
+        var h = 2166136261;
+        for (var i = 0; i < blok.length; i += 1) {
+          h ^= blok.charCodeAt(i);
+          h = Math.imul(h, 16777619);
+        }
+        document.documentElement.dataset.kampanya = bicimler[(gunSayisi + (h >>> 0)) % bicimler.length];
+      })();
     </script>
   </head>
   <body>

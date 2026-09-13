@@ -73,6 +73,9 @@ for (const view of views) {
       });
       return {
         ad: sec.id || String(sec.className).split(' ')[0] || '-',
+        // Mutlak üst konum: pinlenmiş bölümler kendi yüksekliğinden fazla kaydırma
+        // tükettiği için ekran görüntüsü konumu yükseklik toplamıyla bulunamıyor.
+        ust: Math.round(kutu.ust),
         h: Math.round(kutu.h),
         altBosluk: Math.round(kutu.alt - enAlt),
       };
@@ -126,7 +129,11 @@ for (const view of views) {
   rapor.bolumler
     .slice()
     .sort((a, b) => b.altBosluk - a.altBosluk)
-    .forEach((b) => console.log(`  ${b.ad.padEnd(16)} h=${String(b.h).padStart(5)}  altBosluk=${String(b.altBosluk).padStart(5)}`));
+    .forEach((b) =>
+      console.log(
+        `  ${b.ad.padEnd(16)} ust=${String(b.ust).padStart(6)}  h=${String(b.h).padStart(5)}  altBosluk=${String(b.altBosluk).padStart(5)}`
+      )
+    );
   console.log('ocak panelleri:');
   rapor.ocaklar.forEach((o) => console.log(`  panel ${o.sira}: h=${o.h} icerik=${o.icerikH} altBosluk=${o.altBosluk}`));
   if (rapor.sevilen) {

@@ -1,0 +1,36 @@
+---
+import KampanyaAfis from './KampanyaAfis.astro';
+import KampanyaTabela from './KampanyaTabela.astro';
+import KampanyaSatir from './KampanyaSatir.astro';
+
+// Reklam kuşağı: üç biçim de sunucuda basılır, günün biçimi <html data-kampanya>
+// ile seçilir. Seçim Base.astro içindeki satır içi script'te, ilk boyamadan önce
+// yapılıyor; bu yüzden yanlış biçim bir an görünüp kaybolmuyor.
+// Görünmeyen biçimlerin fotoğrafları lazy olduğu için hiç indirilmiyor.
+---
+
+<div class="kusak" data-kampanya-kusak>
+  <div class="kusak__oge" data-bicim="afis">
+    <KampanyaAfis />
+  </div>
+  <div class="kusak__oge" data-bicim="tabela">
+    <KampanyaTabela />
+  </div>
+  <div class="kusak__oge" data-bicim="satir">
+    <KampanyaSatir />
+  </div>
+</div>
+
+<style>
+  .kusak__oge {
+    display: none;
+  }
+
+  /* Script çalışmazsa afiş kalır: kuşak hiçbir durumda boş görünmez. */
+  :global(html:not([data-kampanya])) .kusak__oge[data-bicim='afis'],
+  :global(html[data-kampanya='afis']) .kusak__oge[data-bicim='afis'],
+  :global(html[data-kampanya='tabela']) .kusak__oge[data-bicim='tabela'],
+  :global(html[data-kampanya='satir']) .kusak__oge[data-bicim='satir'] {
+    display: block;
+  }
+</style>

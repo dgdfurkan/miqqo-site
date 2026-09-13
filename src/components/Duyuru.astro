@@ -4,8 +4,9 @@ import Icon from './Icon.astro';
 import wordmark from '../assets/brand/miqqo-wordmark.png';
 import { klipler, klipPoster, klipSrc, panoGorselleri } from '../data/media';
 import { findItem } from '../data/menu';
-import { productImage, hasProductImage } from '../lib/images';
-import { site } from '../data/site';
+import { dishImage, hasDishImage, productImage, hasProductImage } from '../lib/images';
+import { formatPrice, site } from '../data/site';
+import { panoReklamlari } from '../data/kampanya';
 
 // Günün panosu: Instagram hikâyesi gibi dikey kartlar, otomatik geçiş, fiyat yok.
 // Kartların hepsi <template> içinde duruyor; günün tohumu seçiyor, seçilmeyenler
@@ -89,7 +90,7 @@ const gorselKartlari = panoGorselleri
   }
   {
     gorselKartlari.map((kart) => (
-      <article class="kart" data-pano-card data-tip="gorsel">
+      <article class="kart" data-pano-card data-tip="gorsel" data-slug={kart.slug}>
         <Picture
           class="kart__medya"
           src={productImage(kart.slug)}
@@ -107,6 +108,31 @@ const gorselKartlari = panoGorselleri
       </article>
     ))
   }
+  {
+    panoReklamlari
+      .filter((reklam) => hasDishImage(reklam.gorsel))
+      .map((reklam) => (
+        <article class="kart kart--reklam" data-pano-card data-tip="reklam" data-slug={reklam.gorsel}>
+          <Picture
+            class="kart__medya kart__medya--sonuk"
+            src={dishImage(reklam.gorsel)}
+            alt={reklam.baslik}
+            widths={[420, 640]}
+            sizes="(min-width: 640px) 420px, 92vw"
+            formats={['webp']}
+            loading="lazy"
+            data-media-id={`urun-${reklam.gorsel}`}
+          />
+          <div class="kart__reklam">
+            <p class="kart__ust">{reklam.ustyazi}</p>
+            <p class="display kart__fiyat">{formatPrice(reklam.fiyat)}</p>
+            <p class="kart__fiyat-not">{reklam.fiyatNotu}</p>
+            <p class="display kart__baslik kart__baslik--reklam">{reklam.baslik}</p>
+            <p class="kart__metin">{reklam.metin}</p>
+          </div>
+        </article>
+      ))
+  }
 </template>
 
 <script>
@@ -115,6 +141,8 @@ const gorselKartlari = panoGorselleri
   const KEY = 'miqqo-duyuru';
   const GORSEL_SURE = 3.8;
   const VIDEO_SURE = 5.4;
+  // Reklam karesinde fiyat ve iki satır yazı var, okumak için biraz daha uzun durur.
+  const REKLAM_SURE = 4.8;
 
   const dialog = document.querySelector<HTMLDialogElement>('[data-pano]');
   const template = document.querySelector<HTMLTemplateElement>('[data-pano-tpl]');
@@ -169,9 +197,16 @@ const gorselKartlari = panoGorselleri
       const parca = template.content.cloneNode(true) as DocumentFragment;
       const videolar = karistir([...parca.querySelectorAll<HTMLElement>('[data-tip="video"]')], rand);
       const gorseller = karistir([...parca.querySelectorAll<HTMLElement>('[data-tip="gorsel"]')], rand);
-      const secilen = [videolar[0], gorseller[0], videolar[1], gorseller[1], gorseller[2]].filter(Boolean);
+      const reklamlar = karistir([...parca.querySelectorAll<HTMLElement>('[data-tip="reklam"]')], rand);
+      // Sıra: video, tabak, reklam, video, tabak. Reklam ortada duruyor, günün
+      // reklamı tohumla değişiyor. Hikâye akışı bozulmuyor, araya bir ilan giriyor.
+      const reklam = reklamlar[0];
+      // Reklamdaki ürün ayrıca tabak karesi olarak çıkmasın: ölçümde işkembe hem
+      // reklamda hem üçüncü karede görünüyordu.
+      const tabaklar = gorseller.filter((kart) => kart.dataset.slug !== reklam?.dataset.slug);
+      const secilen = [videolar[0], tabaklar[0], reklam, videolar[1], tabaklar[1]].filter(Boolean);
 
-      [...videolar, ...gorseller].forEach((kart) => {
+      [...videolar, ...gorseller, ...reklamlar].forEach((kart) => {
         if (!secilen.includes(kart)) kart.remove();
       });
       secilen.forEach((kart) => stage.appendChild(kart));
@@ -225,12 +260,13 @@ const gorselKartlari = panoGorselleri
       videoyuHazirla(kartlar[sira + 1]);
       if (video) void video.play().catch(() => {});
 
-      const sure = kart.dataset.tip === 'video' ? VIDEO_SURE : GORSEL_SURE;
+      const tip = kart.dataset.tip;
+      const sure = tip === 'video' ? VIDEO_SURE : tip === 'reklam' ? REKLAM_SURE : GORSEL_SURE;
 
       if (!prefersReducedMotion()) {
         // Kare yavaşça yaklaşır, yazı alttan gelir: hikâye hissi buradan geliyor.
         const medya = kart.querySelector<HTMLElement>('.kart__medya');
-        const yazi = kart.querySelector<HTMLElement>('.kart__yazi');
+        const yazi = kart.querySelector<HTMLElement>('.kart__yazi, .kart__reklam');
         if (medya) gsap.fromTo(medya, { scale: 1.08 }, { scale: 1, duration: sure + 0.8, ease: 'none' });
         if (yazi)
           gsap.fromTo(yazi, { autoAlpha: 0, y: 16 }, { autoAlpha: 1, y: 0, duration: 0.5, ease: 'expo.out', delay: 0.12 });
@@ -516,6 +552,48 @@ const gorselKartlari = panoGorselleri
   .kart__metin {
     color: rgb(241 232 216 / 0.82);
     font-size: 0.95rem;
+  }
+
+  /* Reklam karesi: fotoğraf sönük arkada durur, fiyat ortada. Hikâye karesinden
+     ayrışsın diye yazı ortaya hizalı ve zemin daha koyu. */
+  .kart--reklam {
+    background-color: #0b0c0a;
+  }
+
+  .kart :global(.kart__medya--sonuk) {
+    opacity: 0.34;
+  }
+
+  .kart__reklam {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    align-content: center;
+    gap: 0.25rem;
+    padding: clamp(20px, 6vw, 34px);
+  }
+
+  .kart__ust {
+    color: var(--color-koz);
+    font-family: var(--font-display);
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .kart__fiyat {
+    font-size: clamp(3.4rem, 15vw, 4.8rem);
+    line-height: 0.85;
+  }
+
+  .kart__fiyat-not {
+    color: rgb(241 232 216 / 0.7);
+    font-size: 0.9rem;
+  }
+
+  .kart__baslik--reklam {
+    margin-top: 0.8rem;
   }
 
   /* Kartın sağına ve soluna tıklayınca hikâye ilerler */

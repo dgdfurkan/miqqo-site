@@ -86,13 +86,14 @@ Ana sayfa bölümleri ve yerleşim aileleri (her aile bir kez):
  3 Şerit            tek marquee, ürün adları, kaydırma hızına tepki verir
  4 Üç ocak          sticky stack: Mangal / Odun ateşi / Kazan, her panel tam yükseklik
  5 En çok sevilenler yatay kaydırma (masaüstü pin + scrub, mobil scroll-snap)
- 6 Ocak başında     sessiz video duvarı, asimetrik grid
- 7 Mekan            dükkan fotoğrafları, bento
- 8 Yorumlar         bento: Google puanı, iki kısa yorum, salon fotoğrafı, açık/kapalı durumu
- 9 Kiloluk menüler  segment kontrol (500 gr / 1 kg) ve fiyatları değişen liste
-10 Sipariş bandı    tam genişlik, karartılmış sofra fotoğrafı, telefon ve platform linkleri
-11 Konum            adres ve saatler solda, harita sağda
-12 Footer           büyük logo, "Afiyet olsun."
+ 6 Reklam kuşağı    günün biçimi: tabela / gazete ilanı / ilan satırı
+ 7 Ocak başında     sessiz video duvarı, asimetrik grid
+ 8 Mekan            dükkan fotoğrafları, bento
+ 9 Yorumlar         bento: Google puanı, iki kısa yorum, salon fotoğrafı, açık/kapalı durumu
+10 Kiloluk menüler  segment kontrol (500 gr / 1 kg) ve fiyatları değişen liste
+11 Sipariş bandı    tam genişlik, karartılmış sofra fotoğrafı, telefon ve platform linkleri
+12 Konum            adres ve saatler solda, harita sağda
+13 Footer           büyük logo, "Afiyet olsun."
 ```
 
 ## Günün duyuru panosu
@@ -175,6 +176,9 @@ Easing: `expo.out` giriş, `power2.inOut` durum değişimi. Süreler: geri bildi
 | Marquee hız ve yön tepkisi | Menünün genişliğini tek bakışta verir |
 | Üç ocak sticky stack | Mutfağın üç ateşini sırayla anlatır |
 | En çok sevilenler yatay pan | Ürünleri tek tek sahneye çıkarır |
+| Kampanya tabelası: satırlar soldan girer, noktalı dolgu soldan sağa çizilir | Fiyatın hangi çorbaya ait olduğunu göz takip eder |
+| Gazete ilanı: kağıt yerine oturur, başlık ve fiyat maskeden yükselir | Afiş duvara asılıyormuş hissini verir, fiyat en sonda gelir |
+| İlan satırı: iki kural soldan sağa çizilir, cümle maskeden yükselir | Araya giren kısa duyuruyu açar, satırın sınırlarını çizer |
 | Kiloluk fiyat geçişi | Seçimin fiyatı nasıl değiştirdiğini gösterir |
 | Sipariş bandı fotoğraf parallax | Bant ile içerik arasında derinlik |
 | Mobil menü açılışı, dialog açılışı | Durum değişimini gösterir |
@@ -195,6 +199,7 @@ Kurallar:
 3. Çorba, kebap, pide için üç eşit kart düşünüldü. Tam yükseklikte üç panelli sticky stack'e çevrildi.
 4. Koyu zemin ve tek canlı vurgu, yapay zeka sitelerinin sık kullandığı bir kombinasyon. Burada markanın kendisi (logo, basılı menü, tabela) olduğu için korundu; grain, köz ışığı, gerçek yemek fotoğrafı, lavaş tonlu metin ve şiş motifiyle markaya özgü hale getirildi.
 5. Avatarlı yorum carousel'i düşünüldü. Uydurma isim ve avatar olmadan, gerçek Google puanını merkeze alan bento ile değiştirildi.
+6. Kampanya kuşağı için ilk akla gelen indirim rozeti, yüzde etiketi ve üç eşit "fırsat kartı"; yapay zeka çıktısının en tanıdık kalıbı. Ödüllü restoran sitelerine bakıldı (Noma, Dishoom, Eleven Madison Park, Death & Co): hiçbiri fiyatı reklam olarak göstermiyor, fiyat sipariş akışının içinde duruyor. Bu yüzden referans web siteleri değil basılı ilan kültürü alındı: emaye fiyat tabelası, gazete ilanı ve ilan satırı. Yüzde indirim uydurulmadı; kampanyalar menüde gerçekten var olan şeyler (çorbaların tek fiyatı, ayran dahil ekonomik dürümler, dürümde ikram). Üç biçim aynı yerde durur, günün biçimi tur usulü seçilir: her üç günde üçü de bir kez çıkar.
 
 ## Teslim öncesi kontrol
 

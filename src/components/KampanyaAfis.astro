@@ -1,0 +1,206 @@
+---
+import { Picture } from 'astro:assets';
+import { foodImage } from '../lib/images';
+import { formatPrice } from '../data/site';
+import { ekonomikAdlari, ekonomikFiyat, ekonomikNot } from '../data/kampanya';
+
+// Biçim 2: gazete ilanı. Sitedeki tek açık zeminli blok, duvara afiş asılmış gibi
+// durur. Kalın kurallar, dev fiyat, tek cümle. Kampanya gerçek: ekonomik dürümlerin
+// hepsi aynı fiyatta ve ayran fiyata dahil (veriler src/data/kampanya.ts içinde
+// menüden okunuyor).
+---
+
+<section class="afis" aria-labelledby="afis-baslik">
+  <div class="container-site">
+    <div class="afis__kagit" data-afis>
+      <p class="afis__kunye">
+        <span>Ciğerci Miqqo</span>
+        <span aria-hidden="true">/</span>
+        <span>Ekonomik Dürümler</span>
+      </p>
+
+      <div class="afis__govde">
+        <div class="afis__sol">
+          <h2 id="afis-baslik" class="display afis__baslik">
+            <span class="mask">
+              <span data-rise>Ayran dahil</span>
+            </span>
+          </h2>
+          <p class="afis__metin" data-rise>{ekonomikNot}</p>
+          <ul class="afis__adlar" data-rise>
+            {ekonomikAdlari.map((ad) => <li>{ad}</li>)}
+          </ul>
+        </div>
+
+        <p class="display afis__fiyat">
+          <span class="mask afis__fiyat-kutu">
+            <span class="afis__fiyat-sayi" data-rise>{formatPrice(ekonomikFiyat)}</span>
+          </span>
+          <span class="afis__fiyat-alt" data-rise>hepsi tek fiyat</span>
+        </p>
+
+        <div class="afis__foto" data-afis-foto>
+          <Picture
+            class="afis__kesim"
+            src={foodImage('kofte-durum')}
+            alt="Lavaşa sarılmış köfte dürüm"
+            widths={[320, 480]}
+            sizes="260px"
+            formats={['webp']}
+            loading="lazy"
+            data-media-id="kesim-kofte-durum"
+          />
+        </div>
+
+        <a class="afis__cta" href="/menu#ekonomik-durumler" data-rise>Ekonomik dürümler</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  import { gsap, allowMotionQuery } from '../scripts/motion';
+
+  const kagit = document.querySelector<HTMLElement>('[data-afis]');
+
+  if (kagit) {
+    gsap.matchMedia().add(allowMotionQuery, () => {
+      const yukselenler = kagit.querySelectorAll('[data-rise]');
+      const foto = kagit.querySelector('[data-afis-foto]');
+
+      gsap
+        .timeline({ scrollTrigger: { trigger: kagit, start: 'top 80%' } })
+        .fromTo(kagit, { y: 24, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.7, ease: 'expo.out' })
+        .fromTo(
+          yukselenler,
+          { yPercent: 110, autoAlpha: 0 },
+          { yPercent: 0, autoAlpha: 1, duration: 0.8, stagger: 0.07, ease: 'expo.out' },
+          0.15
+        )
+        .fromTo(foto, { autoAlpha: 0, x: 24 }, { autoAlpha: 1, x: 0, duration: 0.7, ease: 'expo.out' }, 0.3);
+    });
+  }
+</script>
+
+<style>
+  .afis {
+    padding-block: clamp(48px, 7vw, 96px);
+  }
+
+  /* Kağıt: koyu sayfada tek açık blok, gazete ilanı gibi kalın kurallar */
+  .afis__kagit {
+    position: relative;
+    overflow: hidden;
+    padding: clamp(20px, 3vw, 36px) clamp(20px, 4vw, 48px) clamp(24px, 4vw, 44px);
+    border-radius: 4px;
+    border-block: 6px solid var(--color-komur);
+    background-color: var(--color-lavas);
+    color: var(--color-komur);
+    box-shadow: 0 24px 60px rgb(0 0 0 / 0.45);
+  }
+
+  .afis__kunye {
+    display: flex;
+    gap: 0.6rem;
+    padding-bottom: clamp(14px, 2vw, 22px);
+    border-bottom: 1px solid rgb(15 16 14 / 0.28);
+    font-family: var(--font-display);
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .afis__govde {
+    display: grid;
+    gap: clamp(16px, 2.5vw, 32px);
+    padding-top: clamp(18px, 3vw, 30px);
+  }
+
+  .afis__baslik {
+    font-size: clamp(3rem, 11vw, 7rem);
+    line-height: 0.86;
+  }
+
+  .afis__metin {
+    max-width: 26ch;
+    margin-top: 0.7rem;
+    font-size: 1.05rem;
+  }
+
+  .afis__adlar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 0.9rem;
+    margin-top: 1rem;
+    font-family: var(--font-display);
+    font-size: clamp(1rem, 1.6vw, 1.2rem);
+    font-weight: 700;
+  }
+
+  .afis__adlar li + li::before {
+    content: '/';
+    margin-right: 0.9rem;
+    color: rgb(15 16 14 / 0.45);
+  }
+
+  /* Çağrı gövdenin sonunda: mobilde fiyattan önce geliyordu, reklamda sıra
+     başlık, fiyat, sonra çağrı olmalı. */
+  .afis__cta {
+    display: inline-block;
+    justify-self: start;
+    margin-top: 0.4rem;
+    padding-bottom: 2px;
+    border-bottom: 2px solid var(--color-koz);
+    color: var(--color-komur);
+    font-weight: 700;
+  }
+
+  .afis__fiyat {
+    display: grid;
+    justify-items: start;
+    align-content: start;
+  }
+
+  .afis__fiyat-kutu {
+    display: block;
+  }
+
+  .afis__fiyat-sayi {
+    display: block;
+    color: var(--color-koz);
+    font-size: clamp(4.5rem, 17vw, 11rem);
+    line-height: 0.8;
+  }
+
+  .afis__fiyat-alt {
+    display: block;
+    margin-top: 0.5rem;
+    font-family: var(--font-sans);
+    font-size: 0.95rem;
+    font-weight: 500;
+  }
+
+  .afis__foto {
+    max-width: 260px;
+  }
+
+  .afis__kesim {
+    display: block;
+    width: 100%;
+    height: auto;
+    filter: drop-shadow(0 12px 18px rgb(15 16 14 / 0.3));
+  }
+
+  @media (min-width: 900px) {
+    .afis__govde {
+      grid-template-columns: minmax(0, 6fr) minmax(0, 4fr) minmax(0, 3fr);
+      align-items: center;
+    }
+
+    .afis__foto {
+      justify-self: end;
+      max-width: 100%;
+    }
+  }
+</style>
