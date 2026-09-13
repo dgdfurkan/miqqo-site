@@ -161,6 +161,16 @@
     display: none;
   }
 
+  /* Görsel inene kadar kutu koyu zeminde bekler, dosya gelince yumuşak açılır.
+     Kural yalnız .motion altında: JS çalışmazsa hiçbir görsel gizli kalmaz. */
+  .motion img {
+    transition: opacity 0.45s var(--ease-soft);
+  }
+
+  .motion img:not(.is-yuklendi) {
+    opacity: 0;
+  }
+
   .btn {
     display: inline-flex;
     align-items: center;

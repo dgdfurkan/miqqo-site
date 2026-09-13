@@ -1,75 +1,96 @@
 # Yayın
 
-## Worker gerekiyor mu
+Site Cloudflare Workers üzerinde, statik dosya olarak yayınlanıyor. Adres: `https://miqqo-site.frkngndz60.workers.dev`.
 
-Gerekmiyor. Site tamamen statik: `npm run build` sonunda `dist/` içinde HTML, CSS, JS, görsel ve video çıkıyor, sunucu tarafında çalışan kod yok. Cloudflare'de statik siteyi Pages yayınlar, Worker yazmaya gerek kalmaz.
+## Neden Worker kodu yok
 
-Worker şu iş için gerekir: ileride yönetim paneli, Firebase yazma işlemi veya form gönderimi gibi sunucu tarafı bir uç nokta eklersek. O gün gelirse siteyi bozmadan ayrı bir Worker açılır ve `cigercimiqqo.com/api/*` yoluna bağlanır.
+Proje tamamen statik. `npm run build` sonunda `dist/` içinde HTML, CSS, JS, görsel ve video çıkıyor. Repodaki `wrangler.jsonc` yalnızca bu klasörü işaret ediyor, çalışan bir Worker script'i yok:
 
-## Adım adım Cloudflare Pages kurulumu
+```jsonc
+{
+  "name": "miqqo-site",
+  "compatibility_date": "2026-09-01",
+  "assets": { "directory": "./dist", "not_found_handling": "404-page" }
+}
+```
 
-Repo: `dgdfurkan/miqqo-site`, dal `main`, şu an **private**.
+Worker kodu ancak ileride yönetim paneli, Firebase'e yazma veya form gönderimi gerekirse yazılır.
 
-1. **GitHub erişimi**: Cloudflare panelinde Workers & Pages > Create > Pages > Connect to Git. GitHub hesabını bağlarken açılan izin ekranında "Only select repositories" seçip `miqqo-site` reposunu işaretle. Private repo için bu izin şart, aksi halde repo listede görünmez.
-2. **Proje ayarları**:
+## Kurulumun kritik noktası: görseller
 
-   | Ayar | Değer |
-   |---|---|
-   | Project name | `miqqo-site` |
-   | Production branch | `main` |
-   | Framework preset | Astro |
-   | Build command | `npm run build` |
-   | Build output directory | `dist` |
-   | Root directory | boş bırak |
+Cloudflare'in Workers onboarding'i Astro projesine bir SSR adapter'ı ekleyebiliyor. O zaman görseller build sırasında üretilmiyor, sayfalara `/_image?href=...&f=webp` biçiminde çalışma zamanı adresleri yazılıyor. Workers tarafında sharp olmadığı için bu adreslerin hepsi 404 dönüyor ve sitede logo dahil bütün görseller kayboluyor. Bir kez yaşandı ve ölçüldü: canlı sayfada 309 adet `_image` isteği, sıfır webp.
 
-3. **Node sürümü**: depoda `.nvmrc` var ve içinde `22` yazıyor, Cloudflare bunu okur. Yine de sorun çıkarsa Settings > Environment variables bölümüne `NODE_VERSION = 22` ekle.
-4. **Save and Deploy**. İlk build 2 ile 4 dakika sürer, sonunda `miqqo-site.pages.dev` adresi çıkar. Alan adını bağlamadan önce kontrolü bu adreste yap.
+İki koruma var:
 
-Build sırasında `sharp` ile 40'tan fazla fotoğraf yeniden boyutlandırılıyor, ilk derleme bu yüzden yerelden yavaş olabilir. Cloudflare build önbelleği sonraki derlemelerde bu süreyi kısaltır.
+1. `astro.config.mjs` içinde `output: 'static'` ve sharp servisi açıkça yazılı.
+2. `wrangler.jsonc` repoda: deploy, `dist/` klasörünü statik asset olarak alır.
 
-## GitHub'a her push otomatik yayına gider
+Doğrulama komutu, build sonrası çıktı sıfır olmalı:
 
-Git bağlantısı kurulduğu anda Cloudflare bir webhook takar, ayrıca bir şey yapmana gerek yok:
+```bash
+grep -o '_image?' dist/index.html | wc -l
+```
 
-- `main` dalına push: production build başlar, bitince `cigercimiqqo.com` ve `pages.dev` adresi güncellenir.
-- Başka bir dala push veya pull request: ayrı bir önizleme adresi üretilir (`<commit>.miqqo-site.pages.dev`), production'a dokunmaz. Riskli değişikliği önce orada dene.
-- Bozuk build production'ı düşürmez, önceki sürüm ayakta kalır. Deployments listesinden herhangi bir eski sürüme "Rollback" ile tek tıkla dönülür.
+Canlı siteyi denetlemek için:
 
-Yerelden yayına çıkarmanın tek adımı bu yüzden şu:
+```bash
+node scripts/istek-denetimi.mjs --base https://miqqo-site.frkngndz60.workers.dev --paths /,/menu --views desktop
+```
+
+## Panel ayarları
+
+Workers & Pages > miqqo-site > Settings:
+
+| Ayar | Değer |
+|---|---|
+| Build command | `npm run build` |
+| Deploy command | `npx wrangler deploy` |
+| Node sürümü | 22 (depoda `.nvmrc` var, gerekirse `NODE_VERSION = 22`) |
+| Branch | `main` |
+
+Framework preset'i sonradan değiştirme. Adapter ekleyen bir ön ayar seçilirse görsel sorunu geri gelir.
+
+## GitHub'a push otomatik deploy
+
+Git bağlantısı kurulduktan sonra ek ayar gerekmiyor:
+
+- `main` dalına push: build başlar, bitince canlı adres güncellenir.
+- Başka dal veya pull request: ayrı önizleme sürümü çıkar, canlıya dokunmaz.
+- Build patlarsa canlı sürüm ayakta kalır. Panelden eski bir sürüme dönülebilir.
+
+Yerelden yayına çıkarmanın tek adımı:
 
 ```bash
 git add -A && git commit -m "mesaj" && git push
 ```
 
-Panelden build'i elle tetiklemek istersen: Deployments > sağ üstteki "Create deployment" veya son deployment satırında "Retry deployment".
-
 ## Alan adı
 
-`astro.config.mjs` içindeki `site` değeri `https://cigercimiqqo.com`. Canonical bağlantılar, sitemap ve OG görselleri bu adrese göre üretiliyor.
+`cigercimiqqo.com` şu an Cloudflare'de değil, nameserver'ları `domainhizmetleri.net` ve adreste eski site duruyor. Workers'a özel alan adı bağlamak için alan adının DNS'i Cloudflare'e taşınmalı:
 
-1. Pages projesinde Custom domains > Set up a custom domain: `cigercimiqqo.com`, sonra `www.cigercimiqqo.com`.
-2. Alan adı Cloudflare'de yönetiliyorsa DNS kaydını kendisi ekler. Başka bir kayıt operatöründeyse verdiği CNAME kaydını oraya gir.
-3. Eski site hâlâ yayındaysa DNS'i taşımadan önce son kontrolü `pages.dev` adresinde yap.
-4. Alan adı değişirse `site` değerini de güncelle, yoksa sitemap ve canonical yanlış adresi gösterir.
-
-SSL sertifikasını Cloudflare otomatik üretir, elle bir iş yok.
+1. Cloudflare hesabına alan adını ekle, verdiği iki nameserver'ı kayıt operatöründe yaz.
+2. DNS aktifleşince Workers & Pages > miqqo-site > Settings > Domains & Routes: `cigercimiqqo.com` ve `www.cigercimiqqo.com`.
+3. Taşımadan önce son kontrolü `workers.dev` adresinde yap, eski site yayında kalsın.
+4. `astro.config.mjs` içindeki `site` değeri `https://cigercimiqqo.com`. Alan adı değişirse burayı da güncelle, yoksa sitemap ve canonical yanlış adresi gösterir.
 
 ## Önbellek
 
-`public/_headers` dosyası Cloudflare'e ne kadar önbellekleyeceğini söylüyor:
+`public/_headers` dosyası build çıktısına kopyalanıyor:
 
-- `/_astro/*` bir yıl ve `immutable`: bu dosyaların adında içerik damgası var, değişince adı da değişir.
-- `/video/*` bir gün: klipler adında damga taşımıyor, aynı adla yeni video koyarsan bir gün içinde yenilenir. Hemen görünmesi gerekiyorsa panelden Caching > Purge Everything.
-- `/media.json` önbelleklenmiyor: yönetim panelinden yapılan görsel ve video değişikliği anında yansısın diye.
+- `/_astro/*` bir yıl ve `immutable`: bu dosyaların adında içerik damgası var.
+- `/video/*` bir gün: klipler damga taşımıyor, aynı adla yeni video koyulursa bir gün içinde yenilenir.
+- `/media.json` önbelleklenmiyor: yönetim panelinden yapılan değişiklik anında yansısın diye.
 
 ## Kontrol listesi (her yayından önce)
 
 ```bash
 npm run build
-node scripts/shot.mjs --views mobile,tablet,desktop --scroll 0,1200,2400 --clean
-node scripts/perf.mjs --paths /,/menu
+node scripts/istek-denetimi.mjs --base http://localhost:4399 --paths /,/menu,/iletisim
+node scripts/bosluk-olcumu.mjs --base http://localhost:4399
+node scripts/sicrama-testi.mjs --base http://localhost:4399
+node scripts/shot.mjs --base http://localhost:4399 --views mobile,tablet,desktop --scroll 0,1200,2400 --clean
 ```
 
-CLAUDE.md içindeki uzun tire kontrolünü de çalıştır.
+Önizleme sunucusu: `npx astro preview --port 4399`. Ayrıntılı görsel denetim: `.claude/skills/gorsel-denetim/SKILL.md`.
 
-Ayrıntılı görsel denetim: `.claude/skills/gorsel-denetim/SKILL.md`.
+Not: `npm run check` şu an çalışmıyor, `@astrojs/check` ve `typescript` kurulu değil. Tip kontrolü isteniyorsa bu iki paket eklenmeli.
