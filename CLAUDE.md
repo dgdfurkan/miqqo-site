@@ -18,7 +18,7 @@ Eryaman/Etimesgut'taki Ciğerci Miqqo (ciğer, kebap, pide, çorba) için statik
 
 ```bash
 npm run dev      # http://localhost:4321
-npm run build    # dist/ statik çıktı
+npm run build    # dist/client statik çıktı (adapter client/server ayrımı yapıyor, server boş)
 npm run preview  # build sonrası önizleme
 npm run check    # astro check (tip kontrolü)
 ```
@@ -80,7 +80,7 @@ public/               favicon, ikonlar, robots.txt
 ## Doğrulama
 
 Bir işi bitti saymadan önce:
-1. `npm run build` hatasız, ardından `grep -o '_image?' dist/index.html | wc -l` sıfır. Sıfır değilse görseller build sırasında üretilmemiş demektir ve yayında hepsi 404 verir (sebebi `docs/yayin.md`).
+1. `npm run build` hatasız, ardından `grep -o '_image?' dist/client/index.html | wc -l` sıfır. Sıfır değilse görseller build sırasında üretilmemiş demektir ve yayında hepsi 404 verir (sebebi `docs/yayin.md`).
 2. Dev sunucuda 375, 768 ve 1440 px genişlikte ekran görüntüsü al, gözle incele (`gorsel-denetim` skill'i).
 3. Hareket azaltma açıkken sayfa çalışıyor.
 4. `rg "—|–" src` boş.

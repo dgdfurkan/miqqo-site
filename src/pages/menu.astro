@@ -202,8 +202,6 @@ const detailed = menu.flatMap((c) => c.items.filter(hasDetails));
               </div>
             ) : null}
 
-            {item.note ? <p class="sheet__note">{item.note}</p> : null}
-
             <a class="btn btn-koz sheet__cta" href={site.phone.href} aria-label={`Telefonla ara: ${site.phone.display}`}>
               <Icon name="phone-bold" size={18} />
               <span>{site.phone.display}</span>
@@ -801,11 +799,6 @@ const detailed = menu.flatMap((c) => c.items.filter(hasDetails));
     background-color: rgb(252 72 36 / 0.14);
     color: var(--color-lavas);
     font-size: 0.8125rem;
-  }
-
-  .sheet__note {
-    color: var(--color-kul);
-    font-size: 0.875rem;
   }
 
   .sheet__cta {

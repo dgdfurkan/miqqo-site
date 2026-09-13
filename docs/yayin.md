@@ -10,7 +10,7 @@ Proje tamamen statik. `npm run build` sonunda `dist/` içinde HTML, CSS, JS, gö
 {
   "name": "miqqo-site",
   "compatibility_date": "2026-09-01",
-  "assets": { "directory": "./dist", "not_found_handling": "404-page" }
+  "assets": { "directory": "./dist/client", "not_found_handling": "404-page" }
 }
 ```
 
@@ -28,7 +28,7 @@ Cloudflare'in Workers onboarding'i Astro projesine bir SSR adapter'ı ekleyebili
 Doğrulama komutu, build sonrası çıktı sıfır olmalı:
 
 ```bash
-grep -o '_image?' dist/index.html | wc -l
+grep -o '_image?' dist/client/index.html | wc -l
 ```
 
 Canlı siteyi denetlemek için:
@@ -44,6 +44,7 @@ Workers & Pages > miqqo-site > Settings:
 | Ayar | Değer |
 |---|---|
 | Build command | `npm run build` |
+| Build output directory | `dist/client` (panelde böyle bir alan varsa) |
 | Deploy command | `npx wrangler deploy` |
 | Node sürümü | 22 (depoda `.nvmrc` var, gerekirse `NODE_VERSION = 22`) |
 | Branch | `main` |

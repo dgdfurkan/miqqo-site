@@ -7,3 +7,5 @@ dist/
 # Yalnizca kokteki ham malzeme klasoru. Basindaki bolu olmazsa src/assets de ignore olur.
 /assets/
 /*.pdf
+.wrangler/
+.test-dist/

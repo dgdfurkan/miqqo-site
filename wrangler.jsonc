@@ -5,8 +5,9 @@
   // her gorsel 404 donuyor.
   "name": "miqqo-site",
   "compatibility_date": "2026-09-01",
+  // Adapter kullanıldığı için site dist/client altına yazılıyor, dist/server boş kalıyor.
   "assets": {
-    "directory": "./dist",
+    "directory": "./dist/client",
     "not_found_handling": "404-page"
   }
 }
