@@ -193,8 +193,10 @@ const total = menu.reduce((sum, c) => sum + c.items.length, 0);
     padding-top: var(--header-h);
   }
 
+  /* Pinlenmiş şerit ekran boyunca duruyor. Kart 422 px kalınca üstte 275, altta
+     203 px ölü alan oluyordu; kart büyüdükçe bölüm doluyor. */
   .sevilen.is-pinned .dish {
-    width: clamp(19rem, 26vw, 26rem);
+    width: clamp(21rem, 31vw, 32rem);
   }
 
   .sevilen.is-pinned .sevilen__head {
