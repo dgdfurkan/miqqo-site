@@ -60,6 +60,7 @@ public/               favicon, ikonlar, robots.txt
   - `src/assets/venue/` dükkan: cephe, tabela, salon, çocuk alanı, sofra, ocak
   `dishImage(slug)` gerçek çekimi, yoksa kesimi döndürür.
 - Ham malzeme (`assets/`, 600 MB) ve basılı menü PDF'i git dışında, yalnız yerelde. İşlenmiş hâlleri depoda.
+- `.gitignore` desenleri köke sabitli: `/assets/` ve `/*.pdf`. Baştaki bölü silinirse desen her dizin seviyesinde eşleşir, `src/assets/` de depo dışında kalır. O hâlde yerelde build geçer ama Cloudflare `UNRESOLVED_IMPORT` ile patlar. Yeni desen eklerken kökü kastediyorsan bölüyü koy.
 - Yeni video eklerken:
   ```bash
   ffmpeg -i "assets/<ad>.mp4" -an -vf "scale=1280:-2:flags=lanczos" -c:v libx264 -crf 27 -preset slow \
