@@ -4,5 +4,6 @@ dist/
 .DS_Store
 *.log
 .shots/
-assets/
-*.pdf
+# Yalnizca kokteki ham malzeme klasoru. Basindaki bolu olmazsa src/assets de ignore olur.
+/assets/
+/*.pdf
