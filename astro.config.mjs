@@ -12,6 +12,9 @@ export default defineConfig({
   // imageService: 'compile' görselleri build sırasında sharp ile ürettiriyor.
   // Ölçüm: adapter + compile ile 0 adet _image, 126 webp, 37 avif.
   output: 'static',
+  // Statik sitede oturum yok. Açık bırakılınca adapter, wrangler ayarına id'siz bir
+  // SESSION KV binding'i yazıyor ve deploy o namespace'i aramaya kalkıyor.
+  session: false,
   adapter: cloudflare({ imageService: 'compile' }),
   integrations: [sitemap()],
   // Ekran görüntüsü denetimlerinde araç çubuğu sayfanın üstüne binmesin.

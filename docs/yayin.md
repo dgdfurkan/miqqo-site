@@ -20,10 +20,13 @@ Worker kodu ancak ileride yönetim paneli, Firebase'e yazma veya form gönderimi
 
 Cloudflare'in Workers onboarding'i Astro projesine bir SSR adapter'ı ekleyebiliyor. O zaman görseller build sırasında üretilmiyor, sayfalara `/_image?href=...&f=webp` biçiminde çalışma zamanı adresleri yazılıyor. Workers tarafında sharp olmadığı için bu adreslerin hepsi 404 dönüyor ve sitede logo dahil bütün görseller kayboluyor. Bir kez yaşandı ve ölçüldü: canlı sayfada 309 adet `_image` isteği, sıfır webp.
 
-İki koruma var:
+Yalnız `output: 'static'` yazmak yetmiyor: adapter eklendiğinde görsel servisini de eziyor, ölçtüm. Üç koruma birlikte duruyor:
 
-1. `astro.config.mjs` içinde `output: 'static'` ve sharp servisi açıkça yazılı.
-2. `wrangler.jsonc` repoda: deploy, `dist/` klasörünü statik asset olarak alır.
+1. `astro.config.mjs` içinde adapter bizim elimizde: `adapter: cloudflare({ imageService: 'compile' })`. Barındırma kendi adapter'ını eklemeye kalkmıyor, görseller build sırasında sharp ile üretiliyor.
+2. Aynı dosyada `session: false`. Açık kalırsa adapter, wrangler ayarına id'siz bir `SESSION` KV binding'i yazıyor ve deploy o namespace'i aramaya kalkıyor.
+3. `wrangler.jsonc` repoda: deploy `dist/client` klasörünü statik asset olarak alır.
+
+Doğru kurulumda `npx wrangler deploy --dry-run` çıktısı "No bindings found" der ve asset sayısını yazar.
 
 Doğrulama komutu, build sonrası çıktı sıfır olmalı:
 
