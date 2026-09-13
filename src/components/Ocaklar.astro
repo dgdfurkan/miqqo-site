@@ -251,6 +251,14 @@ const ocaklar = [
       padding-block: calc(var(--header-h) + clamp(16px, 3vh, 40px)) 48px;
     }
 
+    /* Son panelin üzerine binen bir panel yok. 100svh bırakılınca içerik bitiyor
+       ama panel ekran boyunca sürüyor, altında 385 px boş alan kalıyordu. */
+    .ocak:last-child {
+      position: static;
+      min-height: 0;
+      padding-bottom: clamp(56px, 8vw, 112px);
+    }
+
     /* Satırlar içerik kadar yüksek, blok panelde dikey ortalanıyor.
        Daha önce 1fr satır grid'i gerdiği için başlık tepede kalıyor, fotoğraf panelden taşıyordu. */
     .ocak__inner {

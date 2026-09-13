@@ -71,6 +71,9 @@ const ilk = liste[0];
       let calisiyor = false;
 
       const yukle = (video: HTMLVideoElement, parca: Parca) => {
+        // Ayni klip ikinci kez yuklenmesin: surmekte olan indirme iptal edilip
+        // konsola ERR_ABORTED dusuyordu.
+        if (video.dataset.mediaId === parca.id && video.src) return;
         video.dataset.mediaId = parca.id;
         video.poster = parca.poster;
         video.src = parca.src;
