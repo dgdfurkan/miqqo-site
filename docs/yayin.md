@@ -92,6 +92,6 @@ node scripts/sicrama-testi.mjs --base http://localhost:4399
 node scripts/shot.mjs --base http://localhost:4399 --views mobile,tablet,desktop --scroll 0,1200,2400 --clean
 ```
 
-Önizleme sunucusu: `npx astro preview --port 4399`. Ayrıntılı görsel denetim: `.claude/skills/gorsel-denetim/SKILL.md`.
+Önizleme sunucusu: `npx astro preview --port 4399`. Arka planda kalıyor, yeni build'i göstermesi için `npx astro preview stop` ile kapatıp tekrar başlat. Ayrıntılı görsel denetim: `.claude/skills/gorsel-denetim/SKILL.md`.
 
 Not: `npm run check` şu an çalışmıyor, `@astrojs/check` ve `typescript` kurulu değil. Tip kontrolü isteniyorsa bu iki paket eklenmeli.
