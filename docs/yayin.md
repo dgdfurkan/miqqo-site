@@ -51,6 +51,16 @@ Workers & Pages > miqqo-site > Settings:
 
 Framework preset'i sonradan değiştirme. Adapter ekleyen bir ön ayar seçilirse görsel sorunu geri gelir.
 
+## Yerelden tek komutla deploy
+
+Panel tarafı takılırsa yayına bu komutla çıkılır. Build alır, sonra `wrangler.jsonc` içindeki ayarla `dist/client` klasörünü Workers'a yükler:
+
+```bash
+npm run deploy
+```
+
+İlk çalıştırmada wrangler tarayıcıda Cloudflare girişi ister. Deploy bitince verdiği adresi açıp kontrol et.
+
 ## GitHub'a push otomatik deploy
 
 Git bağlantısı kurulduktan sonra ek ayar gerekmiyor:
