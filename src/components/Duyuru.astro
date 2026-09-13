@@ -183,6 +183,9 @@ const gorselKartlari = panoGorselleri
         if (dolu) gsap.set(dolu, { scaleX: 0 });
       });
       if (gunEl) gunEl.textContent = gunYazisi();
+      // İlk iki kartın videosu hemen yüklenmeye başlar, açılışta ilk kare beklemesin.
+      videoyuHazirla(kartlar[0]);
+      videoyuHazirla(kartlar[1]);
     };
 
     const videoyuHazirla = (kart?: HTMLElement) => {
@@ -194,7 +197,13 @@ const gorselKartlari = panoGorselleri
     const durdur = () => {
       sayac?.kill();
       sayac = null;
-      kartlar.forEach((kart) => kart.querySelector('video')?.pause());
+      kartlar.forEach((kart) => {
+        kart.querySelector('video')?.pause();
+        const medya = kart.querySelector<HTMLElement>('.kart__medya');
+        const yazi = kart.querySelector<HTMLElement>('.kart__yazi');
+        if (medya) gsap.killTweensOf(medya);
+        if (yazi) gsap.killTweensOf(yazi);
+      });
     };
 
     const goster = (index: number) => {
@@ -217,6 +226,16 @@ const gorselKartlari = panoGorselleri
       if (video) void video.play().catch(() => {});
 
       const sure = kart.dataset.tip === 'video' ? VIDEO_SURE : GORSEL_SURE;
+
+      if (!prefersReducedMotion()) {
+        // Kare yavaşça yaklaşır, yazı alttan gelir: hikâye hissi buradan geliyor.
+        const medya = kart.querySelector<HTMLElement>('.kart__medya');
+        const yazi = kart.querySelector<HTMLElement>('.kart__yazi');
+        if (medya) gsap.fromTo(medya, { scale: 1.08 }, { scale: 1, duration: sure + 0.8, ease: 'none' });
+        if (yazi)
+          gsap.fromTo(yazi, { autoAlpha: 0, y: 16 }, { autoAlpha: 1, y: 0, duration: 0.5, ease: 'expo.out', delay: 0.12 });
+      }
+
       const dolu = bars.children[sira]?.firstElementChild as HTMLElement | undefined;
       if (!dolu) return;
 
@@ -268,10 +287,19 @@ const gorselKartlari = panoGorselleri
         goster(0);
         return;
       }
+      const head = dialog.querySelector<HTMLElement>('.pano__head');
+      const foot = dialog.querySelector<HTMLElement>('.pano__foot');
       gsap
         .timeline()
-        .fromTo(panel, { autoAlpha: 0, y: 28, scale: 0.97 }, { autoAlpha: 1, y: 0, scale: 1, duration: 0.6, ease: 'expo.out' })
-        .add(() => goster(0), 0.25);
+        .fromTo(panel, { autoAlpha: 0, y: 26, scale: 0.94 }, { autoAlpha: 1, y: 0, scale: 1, duration: 0.55, ease: 'expo.out' })
+        .fromTo(
+          [bars, head].filter(Boolean),
+          { autoAlpha: 0, y: -10 },
+          { autoAlpha: 1, y: 0, duration: 0.4, ease: 'power2.out', stagger: 0.06 },
+          0.12
+        )
+        .fromTo([foot].filter(Boolean), { autoAlpha: 0, y: 14 }, { autoAlpha: 1, y: 0, duration: 0.4, ease: 'power2.out' }, 0.18)
+        .add(() => goster(0), 0.14);
     };
 
     dialog.querySelector('[data-pano-close]')?.addEventListener('click', kapat);
@@ -316,7 +344,7 @@ const gorselKartlari = panoGorselleri
       })
     );
 
-    window.setTimeout(() => ac(false), 1100);
+    window.setTimeout(() => ac(false), 550);
   }
 </script>
 
@@ -339,6 +367,29 @@ const gorselKartlari = panoGorselleri
     place-items: center;
     height: 100dvh;
     padding: clamp(10px, 2vw, 28px);
+  }
+
+  /* Perde: arka sayfa hafifçe bulanıklaşıp koyulaşır, panel önde kalır */
+  .pano::backdrop {
+    background-color: rgb(6 7 6 / 0.84);
+    backdrop-filter: blur(4px);
+    animation: pano-perde 0.38s var(--ease-soft) both;
+  }
+
+  @keyframes pano-perde {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .pano::backdrop {
+      animation: none;
+      backdrop-filter: none;
+    }
   }
 
   /* Hikâye paneli: dikey, telefon oranında */

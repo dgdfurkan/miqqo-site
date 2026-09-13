@@ -20,6 +20,20 @@ const tara = (kok: ParentNode = document) => {
 
 tara();
 
+// Sonradan DOM'a giren görseller de izlenir. Pano kartları <template> içinde duruyor
+// ve pano açılınca klonlanıyor: ilk taramada olmadıkları için is-yuklendi alamıyor,
+// saydam kalıp kutu simsiyah görünüyordu.
+const gozcu = new MutationObserver((kayitlar) => {
+  kayitlar.forEach((kayit) => {
+    kayit.addedNodes.forEach((node) => {
+      if (!(node instanceof Element)) return;
+      if (node instanceof HTMLImageElement) izle(node);
+      else tara(node);
+    });
+  });
+});
+gozcu.observe(document.body, { childList: true, subtree: true });
+
 // Yönetim panelinden yeni adres gelirse görsel yeniden yüklenir, geçiş tekrar oynar.
 medyaDegisince(() => {
   document.querySelectorAll<HTMLImageElement>('img[data-media-id]').forEach((img) => {

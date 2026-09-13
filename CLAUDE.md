@@ -76,6 +76,7 @@ public/               favicon, ikonlar, robots.txt
 - Animasyonlu elemana CSS'ten transform verme; transform'un tek sahibi GSAP. Ön durum gizleme `visibility: hidden` ile, animasyon `autoAlpha` ile yapılır. Sebebi `docs/tasarim-sistemi.md` içindeki hareket kurallarında.
 - Her animasyon `gsap.matchMedia()` içinde `(prefers-reduced-motion: no-preference)` koşuluna bağlı; azaltılmış harekette içerik düz ve eksiksiz görünmeli.
 - Yeni hareket eklerken `docs/tasarim-sistemi.md` içindeki "Hareket" tablosuna nedenini yaz. Nedeni tek cümleyle yazılamıyorsa ekleme.
+- `<template>` içinden klonlanan elemanlar sayfa açılışındaki taramalara yakalanmaz. Pano kartlarının görselleri bu yüzden `is-yuklendi` alamayıp saydam kalmış, kareler simsiyah görünmüştü. `src/scripts/gorsel-yuklenme.ts` artık MutationObserver ile sonradan DOM'a gireni de izliyor; benzer bir tarama yazarken aynı tuzağa dikkat et.
 
 ## Doğrulama
 
